@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <template id="portal_appointment_templates" name="My Appointments">
+        <t t-call="portal.portal_layout">
+
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Appointments</t>
+            </t>
+
+            <t t-if="not appointments">
+                <p class="alert alert-warning">
+                    There are currently no appointments for your account.
+                </p>
+            </t>
+
+            <t t-if="appointments" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>Appointment No</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th class="text-end">Date</th>
+                        <th class="text-end">Status</th>
+                    </tr>
+                </thead>
+
+                <t t-foreach="appointments" t-as="app">
+                    <tr>
+                        <td>
+                            <a t-att-href="'/my/appointments/%s' % app.id">
+                                <t t-esc="app.appointment_no"/>
+                            </a>
+                        </td>
+
+                        <td>
+                            <t t-esc="app.patient_id.name"/>
+                        </td>
+
+                        <td>
+                            <t t-esc="app.doctor_id.name"/>
+                        </td>
+
+                        <td class="text-end">
+                            <span t-field="app.appointment_date"
+                                  t-options="{'widget': 'datetime'}"/>
+                        </td>
+
+                        <td class="text-end">
+                            <span t-esc="app.state"/>
+                        </td>
+                    </tr>
+                </t>
+            </t>
+
+        </t>
+    </template>
+
+</odoo>

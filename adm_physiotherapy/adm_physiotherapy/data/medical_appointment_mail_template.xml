@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <record id="email_template_medical_appointment" model="mail.template">
+            <field name="name">Medical Appointment Confirmation</field>
+            <field name="model_id" ref="adm_physiotherapy.model_medical_appointment"/>
+            <field name="subject">Appointment Confirmation - ${object.appointment_no}</field>
+
+            <field name="email_from">${(user.email_formatted or '')}</field>
+
+            <!-- Send to both patient + doctor -->
+            <field name="email_to">
+                ${object.patient_id.email or ''},${object.doctor_id.work_email or ''}
+            </field>
+
+            <field name="body_html" type="html">
+                <p>Dear ${object.patient_id.name},</p>
+
+                <p>Your appointment has been successfully created.</p>
+
+                <ul>
+                    <li><strong>Appointment No:</strong> ${object.appointment_no}</li>
+                    <li><strong>Date:</strong> ${object.appointment_date}</li>
+                    <li><strong>Doctor:</strong> ${object.doctor_id.name}</li>
+                </ul>
+
+                <p>Thank you.</p>
+            </field>
+
+        </record>
+
+    </data>
+</odoo>

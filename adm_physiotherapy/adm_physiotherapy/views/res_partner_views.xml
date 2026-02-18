@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- PATIENT LIST VIEW -->
+    <record id="view_res_partner_patient_list" model="ir.ui.view">
+        <field name="name">res.partner.patient.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list string="Patients"
+                  decoration-info="is_patient"
+                  decoration-muted="not active">
+                <field name="patient_code"/>
+                <field name="name"/>
+                <field name="age"/>
+                <field name="gender"/>
+                <field name="phone"/>
+                <!--                <field name="phone"/>-->
+                <field name="email"/>
+                <field name="city"/>
+                <field name="appointment_count"/>
+                <field name="is_patient" invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- PATIENT FORM VIEW -->
+    <record id="view_res_partner_patient_form" model="ir.ui.view">
+        <field name="name">res.partner.patient.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <!-- SMART BUTTONS -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+
+                <button name="action_open_appointments"
+                        type="object"
+                        class="oe_stat_button"
+                        invisible="not is_patient">
+                    <field name="appointment_count" widget="statinfo"/>
+                </button>
+
+                <button name="action_open_prescriptions"
+                        type="object"
+                        class="oe_stat_button"
+                        invisible="not is_patient">
+                    <field name="prescription_count" widget="statinfo"/>
+                </button>
+
+                <button name="action_open_bills"
+                        type="object"
+                        class="oe_stat_button"
+                        invisible="not is_patient">
+                    <field name="bill_count" widget="statinfo"/>
+                </button>
+
+            </xpath>
+
+            <!-- HEALTHCARE PAGE -->
+            <xpath expr="//page[@name='sales_purchases']" position="before">
+                <page string="Healthcare Information"
+                      invisible="not is_patient and not is_physio">
+
+                    <group>
+                        <field name="is_patient"/>
+                        <field name="is_physio"/>
+                        <field name="patient_code" readonly="1"
+                               invisible="not is_patient"/>
+                    </group>
+
+                    <group invisible="not is_patient">
+                        <field name="date_of_birth"/>
+                        <field name="age" readonly="1"/>
+                        <field name="gender"/>
+                        <field name="blood_group"/>
+                        <field name="medical_history"/>
+                        <field name="allergies"/>
+                        <field name="emergency_contact"/>
+                        <field name="emergency_phone"/>
+                    </group>
+
+                    <group invisible="not is_physio">
+                        <field name="specialization"/>
+                        <field name="license_number"/>
+                        <field name="qualification"/>
+                        <field name="experience_years"/>
+                        <field name="consultation_fee"
+                               widget="monetary"
+                               options="{'currency_field': 'currency_id'}"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- PATIENT KANBAN -->
+    <record id="view_res_partner_patient_kanban" model="ir.ui.view">
+        <field name="name">res.partner.patient.kanban</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name"/>
+                <field name="patient_code"/>
+                <field name="age"/>
+                <field name="gender"/>
+                <field name="phone"/>
+                <!--                <field name="phone"/>-->
+                <field name="image_128"/>
+                <field name="appointment_count"/>
+
+                <templates>
+                    <t t-name="card">
+                        <div class="o_kanban_record o_kanban_card">
+                            <strong>
+                                <field name="name"/>
+                            </strong>
+                            <div>
+                                <field name="patient_code"/>
+                                |
+                                <field name="age"/>
+                                |
+                                <field name="gender"/>
+                            </div>
+                            <div>
+                                <field name="phone"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!--    <record id="view_users_form_medical_role" model="ir.ui.view">-->
+    <!--        <field name="name">res.users.form.medical.role</field>-->
+    <!--        <field name="model">res.users</field>-->
+    <!--        <field name="inherit_id" ref="base.view_users_form"/>-->
+    <!--        <field name="arch" type="xml">-->
+
+    <!--            <xpath expr="//notebook" position="inside">-->
+
+    <!--                <page name="medical_role" string="Medical Role">-->
+    <!--                    <group>-->
+    <!--                        <field-->
+    <!--                                name="group_adm_physiotherapy_group_medical_patient_group_adm_physiotherapy_group_medical_doctor_group_adm_physiotherapy_group_medical_admin"-->
+    <!--                                widget="radio"/>-->
+    <!--                    </group>-->
+    <!--                </page>-->
+
+    <!--            </xpath>-->
+
+    <!--        </field>-->
+    <!--    </record>-->
+
+</odoo>
+
+        <!--<?xml version="1.0" encoding="utf-8"?>-->
+        <!--<odoo>-->
+        <!--    <record id="view_res_partner_form_physio" model="ir.ui.view">-->
+        <!--        <field name="name">res.partner.form.physio</field>-->
+        <!--        <field name="model">res.partner</field>-->
+        <!--        <field name="inherit_id" ref="base.view_partner_form"/>-->
+        <!--        <field name="arch" type="xml">-->
+        <!--            <xpath expr="//sheet/group" position="inside">-->
+        <!--                <group string="Physiotherapy Roles">-->
+        <!--                    <field name="is_patient"/>-->
+        <!--                    <field name="is_physio"/>-->
+        <!--                </group>-->
+        <!--            </xpath>-->
+        <!--            <xpath expr="//notebook" position="inside">-->
+        <!--                <page string="Patient Details">-->
+        <!--                    <group>-->
+        <!--                        <field name="patient_code"/>-->
+        <!--                        <field name="age"/>-->
+        <!--                        <field name="gender"/>-->
+        <!--                    </group>-->
+        <!--                </page>-->
+        <!--                <page string="Physiotherapist Details">-->
+        <!--                    <group>-->
+        <!--                        <field name="specialization"/>-->
+        <!--                    </group>-->
+        <!--                </page>-->
+        <!--            </xpath>-->
+        <!--            <xpath expr="//div[@name='button_box']" position="inside">-->
+        <!--                <button type="object" name="action_open_appointments" class="oe_stat_button" icon="fa-calendar">-->
+        <!--                    <field name="appointment_count" string="Appointments" widget="statinfo"/>-->
+        <!--                </button>-->
+        <!--                <button type="object" name="action_open_prescriptions" class="oe_stat_button" icon="fa-file-medical">-->
+        <!--                    <field name="prescription_count" string="Prescriptions" widget="statinfo"/>-->
+        <!--                </button>-->
+        <!--                <button type="object" name="action_open_bills" class="oe_stat_button" icon="fa-money">-->
+        <!--                    <field name="bill_count" string="Bills" widget="statinfo"/>-->
+        <!--                </button>-->
+        <!--                <button type="action" name="%(action_patient_treatment_report)d" class="oe_stat_button" icon="fa-print">-->
+        <!--                    <div class="o_stat_info">-->
+        <!--                        <span class="o_stat_text">Treatment</span>-->
+        <!--                        <span class="o_stat_text">Report</span>-->
+        <!--                    </div>-->
+        <!--                </button>-->
+        <!--            </xpath>-->
+        <!--        </field>-->
+        <!--    </record>-->
+        <!--</odoo>-->

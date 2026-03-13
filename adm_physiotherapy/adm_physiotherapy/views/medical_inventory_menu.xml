@@ -3,37 +3,37 @@
 
     <!-- Inventory & Equipment (under Physiotherapy root) -->
     <menuitem
-        id="menu_physio_inventory_root"
-        name="Inventory and Equipment"
-        parent="menu_physio_root"
-        sequence="80"
+            id="menu_physio_inventory_root"
+            name="Inventory and Equipment"
+            parent="hospital_root_menu"
+            sequence="80"
     />
 
     <!-- Medical Equipment -->
     <menuitem
-        id="menu_physio_medical_equipment"
-        name="Medical Equipment"
-        parent="menu_physio_inventory_root"
-        action="action_medical_equipment"
-        sequence="10"
+            id="menu_physio_medical_equipment"
+            name="Medical Equipment"
+            parent="menu_physio_inventory_root"
+            action="action_medical_equipment"
+            sequence="10"
     />
 
     <!-- Equipment Assignments -->
     <menuitem
-        id="menu_physio_equipment_assignment"
-        name="Equipment Assignments"
-        parent="menu_physio_inventory_root"
-        action="action_medical_equipment_assignment"
-        sequence="20"
+            id="menu_physio_equipment_assignment"
+            name="Equipment Assignments"
+            parent="menu_physio_inventory_root"
+            action="action_medical_equipment_assignment"
+            sequence="20"
     />
 
     <!-- Equipment Maintenance -->
     <menuitem
-        id="menu_physio_equipment_maintenance"
-        name="Equipment Maintenance"
-        parent="menu_physio_inventory_root"
-        action="action_medical_equipment_maintenance"
-        sequence="30"
+            id="menu_physio_equipment_maintenance"
+            name="Equipment Maintenance"
+            parent="menu_physio_inventory_root"
+            action="action_medical_equipment_maintenance"
+            sequence="30"
     />
 
 </odoo>

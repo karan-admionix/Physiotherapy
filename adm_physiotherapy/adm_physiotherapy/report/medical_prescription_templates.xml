@@ -13,7 +13,7 @@
                         <div style="border: 2px solid #000; padding: 12px;">
                             <div class="text-center">
                                 <h1 style="margin:0; letter-spacing:2px; font-weight:800;">
-                                     PRESCRIPTION
+                                    PRESCRIPTION
                                 </h1>
                                 <div style="margin-top:4px; font-size:12px;">
                                     Professional Medical Care
@@ -26,38 +26,45 @@
                                border="1">
                             <tr style="background:#f7f7f7;">
                                 <td style="padding:6px;">
-                                    <strong>Prescription No</strong><br/>
+                                    <strong>Prescription No</strong>
+                                    <br/>
                                     <span t-esc="doc.sequence_no"/>
                                 </td>
                                 <td style="padding:6px;">
-                                    <strong>Date</strong><br/>
+                                    <strong>Date</strong>
+                                    <br/>
                                     <span t-esc="doc.prescription_date"/>
                                 </td>
                                 <td style="padding:6px;">
-                                    <strong>Appointment No</strong><br/>
+                                    <strong>Appointment No</strong>
+                                    <br/>
                                     <span t-esc="doc.appointment_id.appointment_no"/>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="padding:6px;">
-                                    <strong>Patient Name</strong><br/>
+                                    <strong>Patient Name</strong>
+                                    <br/>
                                     <span t-esc="doc.patient_id.name"/>
                                 </td>
                                 <td style="padding:6px;">
-                                    <strong>Patient ID</strong><br/>
+                                    <strong>Patient ID</strong>
+                                    <br/>
                                     <span t-esc="doc.patient_id.patient_no"/>
                                 </td>
                                 <td style="padding:6px;">
-                                    <strong>Doctor</strong><br/>
+                                    <strong>Doctor</strong>
+                                    <br/>
                                     <span t-esc="doc.prescribed_doctor_id.name"/>
                                 </td>
                             </tr>
                             <tr style="background:#f7f7f7;">
                                 <td style="padding:6px;">
-                                    <strong>Treatment</strong><br/>
+                                    <strong>Treatment</strong>
+                                    <br/>
                                     <span t-esc="doc.treatment_id.name"/>
                                 </td>
-                            
+
                             </tr>
                         </table>
 
@@ -128,13 +135,37 @@
                             <table style="width:100%;">
                                 <tr>
                                     <td width="60%">
-                                        <strong>Doctor’s Instructions:</strong><br/>
+                                        <strong>Doctor’s Instructions:</strong>
+                                        <br/>
                                         Please follow dosage carefully and complete the full course.
                                     </td>
                                     <td width="40%" style="text-align:right;">
-                                        <strong>Doctor Signature</strong><br/><br/>
-                                        _______________________<br/>
+                                        <strong>Doctor Signature</strong>
+                                        <br/>
+                                        <br/>
+                                        _______________________
+                                        <br/>
                                         <span t-esc="doc.prescribed_doctor_id.name"/>
+                                    </td>
+                                </tr>
+
+                                <!-- QR CODES ROW -->
+                                <tr>
+                                    <td width="50%" style="padding-top:16px; text-align:center;">
+                                        <strong style="font-size:11px;">📅 Book New Appointment</strong>
+                                        <br/>
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.appointment_id.booking_qr_image.decode('utf-8')"
+                                             width="100" height="100" style="margin-top:4px;"/>
+                                        <br/>
+                                        <small style="font-size:9px; color:#555;">Scan to Book</small>
+                                    </td>
+                                    <td width="50%" style="padding-top:16px; text-align:center;">
+                                        <strong style="font-size:11px;">📋 View This Appointment</strong>
+                                        <br/>
+                                        <img t-att-src="'data:image/png;base64,%s' % doc.appointment_id.appointment_qr_image.decode('utf-8')"
+                                             width="100" height="100" style="margin-top:4px;"/>
+                                        <br/>
+                                        <small style="font-size:9px; color:#555;">Scan to View</small>
                                     </td>
                                 </tr>
                             </table>

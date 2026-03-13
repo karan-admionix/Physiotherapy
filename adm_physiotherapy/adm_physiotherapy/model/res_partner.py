@@ -5,6 +5,7 @@ from datetime import date
 
 
 class ResPartner(models.Model):
+    # Extend res.partner to support Patient and Physiotherapist roles
     _inherit = 'res.partner'
 
     # ROLE FLAGS
@@ -69,7 +70,7 @@ class ResPartner(models.Model):
     experience_years = fields.Integer(string="Years of Experience")
     consultation_fee = fields.Float(string="Consultation Fee")
 
-    # REQUIRED for monetary widget (ODOO 19)
+    # Required for monetary widget to work correctly
     currency_id = fields.Many2one(
         'res.currency',
         default=lambda self: self.env.company.currency_id,
@@ -80,6 +81,12 @@ class ResPartner(models.Model):
 
     appointment_count = fields.Integer(
         compute="_compute_appointment_count"
+    )
+
+    appointment_ids = fields.One2many(
+        'medical.appointment',
+        'patient_id',
+        string='Appointments'
     )
 
     prescription_count = fields.Integer(
@@ -102,56 +109,73 @@ class ResPartner(models.Model):
             )
 
     def _compute_appointment_count(self):
-        Appointment = self.env.get('physio.appointment')
+        # Only count appointments for patients
         for rec in self:
-            rec.appointment_count = Appointment.search_count([
+            rec.appointment_count = self.env['medical.appointment'].search_count([
                 ('patient_id', '=', rec.id)
-            ]) if Appointment and rec.is_patient else 0
+            ]) if rec.is_patient else 0
 
     def _compute_prescription_count(self):
-        Prescription = self.env.get('physio.prescription')
+        # Only count prescriptions for patients
         for rec in self:
-            rec.prescription_count = Prescription.search_count([
+            rec.prescription_count = self.env['medical.prescription'].search_count([
                 ('patient_id', '=', rec.id)
-            ]) if Prescription and rec.is_patient else 0
+            ]) if rec.is_patient else 0
 
     def _compute_bill_count(self):
-        Billing = self.env.get('physio.billing')
+        # Only count treatment invoices for patients
         for rec in self:
-            rec.bill_count = Billing.search_count([
-                ('patient_id', '=', rec.id)
-            ]) if Billing and rec.is_patient else 0
+            rec.bill_count = self.env['account.move'].search_count([
+                ('partner_id', '=', rec.id),
+                ('move_type', '=', 'out_invoice'),
+                ('is_treatment_invoice', '=', True),
+            ]) if rec.is_patient else 0
 
     # CREATE / WRITE
 
     @api.model_create_multi
     def create(self, vals_list):
+        # Auto-assign patient code sequence on creation
         for vals in vals_list:
             if vals.get('is_patient') and not vals.get('patient_code'):
                 vals['patient_code'] = self.env['ir.sequence'].next_by_code(
-                    'physio.patient'
+                    'medical.patient'
                 )
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        for rec in records:
+            if rec.is_patient:
+                rec._assign_portal_user()
+        return records
 
     def write(self, vals):
         res = super().write(vals)
-        if vals.get('is_patient'):
+        # Re-assign portal user if patient flag or email is updated
+        if vals.get('is_patient') or vals.get('email'):
             for rec in self:
-                if not rec.patient_code:
-                    rec.patient_code = self.env['ir.sequence'].next_by_code(
-                        'physio.patient'
-                    )
+                if rec.is_patient:
+                    rec._assign_portal_user()
         return res
+
+    @api.constrains('is_patient', 'email')
+    def _check_patient_email(self):
+        # Patient must have an email to receive portal access
+        for rec in self:
+            if rec.is_patient and not rec.email:
+                raise ValidationError(
+                    _("Patient '%s' must have an email address.") % rec.name
+                )
 
     # ONCHANGE
 
     @api.onchange('is_patient')
     def _onchange_is_patient(self):
+        # Mark as customer when flagged as patient
         if self.is_patient:
             self.customer_rank = 1
 
     @api.onchange('is_physio')
     def _onchange_is_physio(self):
+        # Mark as supplier when flagged as physiotherapist
         if self.is_physio:
             self.supplier_rank = 1
 
@@ -162,7 +186,7 @@ class ResPartner(models.Model):
         return {
             'type': 'ir.actions.act_window',
             'name': _('Appointments'),
-            'res_model': 'physio.appointment',
+            'res_model': 'medical.appointment',
             'view_mode': 'list,form,calendar',
             'domain': [('patient_id', '=', self.id)],
             'context': {'default_patient_id': self.id},
@@ -173,7 +197,7 @@ class ResPartner(models.Model):
         return {
             'type': 'ir.actions.act_window',
             'name': _('Prescriptions'),
-            'res_model': 'physio.prescription',
+            'res_model': 'medical.prescription',
             'view_mode': 'list,form',
             'domain': [('patient_id', '=', self.id)],
             'context': {'default_patient_id': self.id},
@@ -184,11 +208,38 @@ class ResPartner(models.Model):
         return {
             'type': 'ir.actions.act_window',
             'name': _('Bills'),
-            'res_model': 'physio.billing',
+            'res_model': 'account.move',
             'view_mode': 'list,form',
-            'domain': [('patient_id', '=', self.id)],
+            'domain': [('partner_id', '=', self.id), ('move_type', '=', 'out_invoice')],
             'context': {'default_patient_id': self.id},
         }
+
+    def _assign_portal_user(self):
+        # Create or update portal user linked to this patient partner
+        self.ensure_one()
+
+        if not self.email:
+            return
+
+        portal_group = self.env.ref('base.group_portal')
+
+        existing_user = self.env['res.users'].sudo().search([
+            ('partner_id', '=', self.id),
+        ], limit=1)
+
+        if existing_user:
+            # Add portal group to existing user if not already assigned
+            existing_user.sudo().write({
+                'group_ids': [(4, portal_group.id)]
+            })
+            return
+
+        self.env['res.users'].sudo().create({
+            'name': self.name,
+            'login': self.email,
+            'partner_id': self.id,
+            'group_ids': [(6, 0, [portal_group.id])],
+        })
 
     # CONSTRAINTS
 

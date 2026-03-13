@@ -1,0 +1,16 @@
+<odoo>
+    <template id="hide_book_menu_if_public"
+              inherit_id="website.layout"
+              name="Hide Book Menu For Public">
+
+        <xpath expr="//a[@href='/book-appointment']"
+               position="attributes">
+
+            <attribute name="t-if">
+                request.env.user.has_group('base.group_user')
+            </attribute>
+
+        </xpath>
+
+    </template>
+</odoo>

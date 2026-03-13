@@ -16,4 +16,4 @@ from . import medicine_frequency
 from . import medical_payment_log
 from . import medical_payment
 from . import hr_employee_public
-
+from . import medical_working_day

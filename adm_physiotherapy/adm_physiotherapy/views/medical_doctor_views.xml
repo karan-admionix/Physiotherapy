@@ -6,6 +6,7 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
+
             <!-- Added custom fields -->
             <xpath expr="//field[@name='work_email']" position="before">
                 <field name="is_doctor"/>
@@ -28,6 +29,9 @@
                             <field name="shift_type"/>
                             <field name="start_time"/>
                             <field name="end_time"/>
+                            <field name="slot_duration"/>
+                            <field name="max_appointments"/>
+                            <field name="working_days" widget="many2many_tags"/>
                         </list>
                     </field>
                 </page>
@@ -52,29 +56,24 @@
             <xpath expr="//field[@name='parent_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <!-- Remove the field coach_id -->
-            <!-- <xpath expr="//field[@name='coach_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
+
             <!-- Invisible the page HR Settings -->
             <xpath expr="//page[@name='hr_settings']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <!-- Invisible the page -->
-            <!-- <xpath expr="//page[@name='public']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
             <!-- Invisible the button Lunch plan -->
             <xpath expr="//button[@groups='hr.group_hr_user']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <!-- <xpath expr="//button[@name='%(hr_org_chart.action_hr_employee_org_chart)d']"
-                   position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
-            <!-- <xpath expr="//div[@id='o_employee_right']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
+
+            <!-- Move Create User button near Launch Plan -->
+            <xpath expr="//header" position="inside">
+                <button name="action_create_user"
+                        string="Create User"
+                        type="object"
+                        class="btn-primary"
+                        invisible="user_id != False"/>
+            </xpath>
         </field>
     </record>
 
@@ -92,14 +91,16 @@
             </xpath>
         </field>
     </record>
+
     <record id="medical_doctor_menu_action" model="ir.actions.act_window">
         <field name="name">Doctors</field>
         <field name="res_model">hr.employee</field>
         <field name="domain">[('is_doctor','=',True)]</field>
-
+        <field name="context">{'default_is_doctor': True}</field>
         <field name="view_mode">list,form</field>
     </record>
-    <menuitem id="hospital_root_menu" name="Medical Clinic" sequence="1"/>
+
+    <menuitem id="hospital_root_menu" name="Physiotherapy Management" sequence="1"/>
     <menuitem id="medical_staff" name="Staffs" parent="hospital_root_menu" sequence="3"
               action="medical_doctor_menu_action"/>
 </odoo>

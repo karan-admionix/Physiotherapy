@@ -6,7 +6,7 @@
     # "currency": 'EUR',
     "summary": "Apps basic Hospital Management system Healthcare Management Clinic Management apps manage clinic manage Patient hospital manage Healthcare system Patient Management Hospital Management Healthcare Management Clinic Management hospital Lab Test Request",
     "category": "Industry",
-    "description1": """
+    "description": """
     Admionix Solutions developed a new odoo/OpenERP module apps
     This module is used to manage Hospital and Healthcare Management and Clinic Management apps. 
     manage clinic manage Patient hospital in odoo manage Healthcare system Patient Management, 
@@ -33,8 +33,8 @@
     
 """,
 
-    "depends": ["base", "sale_management", "stock", "account", "hr", "contacts", "mail",
-                "portal", "website", "web", "purchase", "product", "planning"],
+    "depends": ["base", "sale_management", "stock", "accountant", "hr", "contacts", "mail",
+                "portal", "website", "web", "purchase", "product", "planning", "payment", "appointment"],
 
     'data': [
         'security/medical_clinic_groups.xml',
@@ -48,6 +48,7 @@
         'data/medical_treatment_data.xml',
         'data/medical_time_shift_data.xml',
         'data/medicine_frequency_data.xml',
+        'data/medical_working_day_data.xml',
 
         'views/res_partner_views.xml',
         'views/patient_view.xml',
@@ -65,18 +66,27 @@
         'views/medical_source_views.xml',
         'views/portal_templates.xml',
         'views/portal_appointment_templates.xml',
+        'views/website_appointment_templates.xml',
+        'views/website_menu.xml',
 
         'report/medical_prescription_report.xml',
         'report/medical_prescription_templates.xml',
+        'report/medical_appointment_slip_report.xml',
 
     ],
     "author": "Admionix Solutions",
     'website': "https://admionixsolutions.com/",
     "installable": True,
     "application": True,
+    'assets': {
+        'web.assets_frontend': [
+            'adm_physiotherapy/static/src/js/appointment_slots.js'],
+        'web.assets_backend': [
+            'adm_physiotherapy/static/src/js/disable_select_role.js'],
+
+    },
     # "auto_install": False,
-    "images": ["static/description1/icon.png"],
-    # 'live_test_url': 'https://www.browseinfo.com/demo-request?app=basic_hms&version=19&edition=Community',
+    "images": ["static/description/icon.png"],
     "license": 'OPL-1',
 
 }

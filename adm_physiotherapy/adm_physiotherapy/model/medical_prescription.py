@@ -2,9 +2,8 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
-from datetime import datetime, date,time
+from datetime import datetime, date, time
 import pytz
-
 
 
 class MedicalPrescription(models.Model):
@@ -14,25 +13,25 @@ class MedicalPrescription(models.Model):
     _inherit = ['mail.thread']
     _rec_name = "sequence_no"
 
+    # Auto-generated sequence number
     sequence_no = fields.Char(string='Sequence No', required=True,
                               readonly=True, default=lambda self: _('New'),
                               help="Sequence number of the medical prescription")
+
+    # Computed domain — shows only today's confirmed appointments
     appointment_ids = fields.Many2many('medical.appointment',
                                        string="Appointment",
                                        compute="_compute_appointment_ids",
                                        help="All appointments created")
     appointment_id = fields.Many2one('medical.appointment',
                                      string="Appointment",
-                                     domain="[('id','in',appointment_ids)]",
+                                     domain="[('state', '=', 'done')]",
                                      required=True,
                                      help="All appointments created")
     patient_id = fields.Many2one(related="appointment_id.patient_id",
                                  string="Patient",
                                  required=True,
                                  help="name of the patient")
-    # token_no = fields.Integer(related="appointment_id.token_no",
-    #                           string="Token Number",
-    #                           help="Token number of the patient")
     treatment_id = fields.Many2one('medical.treatment',
                                    string="Treatment",
                                    help="Name of the treatment done for patient")
@@ -48,9 +47,9 @@ class MedicalPrescription(models.Model):
                                            required=True,
                                            help="Doctor who is prescribed")
     prescription_date = fields.Date(default=fields.Date.today,
-                                string='Prescription Date',
-                                required=True,
-                                help="Date of the prescription")
+                                    string='Prescription Date',
+                                    required=True,
+                                    help="Date of the prescription")
     state = fields.Selection([('new', 'New'),
                               ('done', 'Prescribed'),
                               ('invoiced', 'Invoiced')],
@@ -65,27 +64,25 @@ class MedicalPrescription(models.Model):
                                       help="Invoice Data")
     treatment_invoice_id = fields.Many2one('account.move', string="Treatment Invoice")
     prescription_invoice_id = fields.Many2one('account.move', string="Prescription Invoice")
-    
+
     referred_doctor_id = fields.Many2one(
         'hr.employee', string='Referred Doctor',
         domain="[('is_doctor', '=', True)]",
         help="Select a different doctor if referring the patient"
     )
     next_appointment_date = fields.Datetime(
-    string="Next Appointment Date & Time",
-    help="Date and time for the next appointment"
+        string="Next Appointment Date & Time",
+        help="Date and time for the next appointment"
     )
-    # grand_total = fields.Float(compute="_compute_grand_total",
-    #                            string="Grand Total",
-    #                            help="Get the grand total amount")
 
     @api.model_create_multi
-    def create(self, vals):
-        """Ensure the next appointment is updated/created when a prescription is created."""
-        vals = vals[0]
-        if vals.get('sequence_no', _('New')) == _('New'):
-                vals['sequence_no'] = self.env['ir.sequence'].next_by_code('medical.prescriptions') or _('New')
-        records = super(MedicalPrescription, self).create(vals)
+    def create(self, vals_list):
+        # Assign sequence number and trigger next appointment creation
+        for vals in vals_list:
+            if vals.get('sequence_no', _('New')) == _('New'):
+                vals['sequence_no'] = self.env['ir.sequence'].next_by_code(
+                    'medical.prescriptions') or _('New')
+        records = super().create(vals_list)
         for record in records:
             record._update_or_create_appointment()
         return records
@@ -93,6 +90,7 @@ class MedicalPrescription(models.Model):
     def write(self, vals):
         """Ensure the next appointment is updated when a prescription is modified."""
         res = super(MedicalPrescription, self).write(vals)
+        # Re-trigger appointment creation only if relevant fields changed
         if 'next_appointment_date' in vals or 'referred_doctor_id' in vals:
             for record in self:
                 record._update_or_create_appointment()
@@ -103,31 +101,29 @@ class MedicalPrescription(models.Model):
         if not self.next_appointment_date or not self.patient_id:
             return
 
-        # Determine the doctor: referred doctor or prescribed doctor
+        # Use referred doctor if set, otherwise fall back to prescribed doctor
         doctor = self.referred_doctor_id or self.prescribed_doctor_id
         if not doctor:
             return
 
-        # --- CONVERT TO LOCAL TIME FLOAT ---
+        # Convert appointment datetime to local float time for shift matching
         appt_dt = self.next_appointment_date
         user_tz = pytz.timezone(self.env.user.tz or 'UTC')
 
-        # Ensure datetime is timezone-aware
         if appt_dt.tzinfo is None:
             appt_dt = pytz.UTC.localize(appt_dt)
 
         local_dt = appt_dt.astimezone(user_tz)
         appt_time = local_dt.hour + local_dt.minute / 60.0
 
-        # --- PICK SHIFT BASED ON APPOINTMENT TIME ---
+        # Find the matching shift for the appointment time
         selected_shift = False
         for shift in doctor.time_shift_ids:
-            # Normalize shift start/end times (float like 9.30 → 9.5)
             start_time = int(shift.start_time) + (shift.start_time % 1) * 100 / 60
             end_time = int(shift.end_time) + (shift.end_time % 1) * 100 / 60
             check_time = appt_time
 
-            # Overnight shift support
+            # Handle overnight shifts
             if end_time <= start_time:
                 end_time += 24
                 if check_time < start_time:
@@ -139,11 +135,10 @@ class MedicalPrescription(models.Model):
 
         if not selected_shift:
             raise UserError(_(
-            "⏰ Appointment time %s is outside doctor's working hours"
-        ) % self._float_time_to_12h(appt_time))
+                "⏰ Appointment time %s is outside doctor's working hours"
+            ) % self._float_time_to_12h(appt_time))
 
-
-        # --- VALIDATE TIME RULES (overlap + shift) ---
+        # Validate overlap and shift rules before creating
         self.env['medical.appointment']._validate_doctor_time_rules(
             appointment_date=self.next_appointment_date,
             doctor_id=doctor.id,
@@ -151,7 +146,6 @@ class MedicalPrescription(models.Model):
             exclude_id=False
         )
 
-        # --- CREATE NEXT APPOINTMENT ---
         self.env['medical.appointment'].create({
             'patient_id': self.patient_id.id,
             'appointment_date': self.next_appointment_date,
@@ -160,14 +154,10 @@ class MedicalPrescription(models.Model):
             'state': 'draft',
         })
 
-
-
-
-
-    @api.depends()
+    @api.depends('appointment_id')
     def _compute_appointment_ids(self):
+        # Fetch only today's confirmed appointments for the domain
         today = fields.Date.today()
-
         start_dt = datetime.combine(today, time.min)
         end_dt = datetime.combine(today, time.max)
 
@@ -180,13 +170,8 @@ class MedicalPrescription(models.Model):
         for rec in self:
             rec.appointment_ids = appointments.ids
 
-
     def action_prescribed(self):
-        """Marks the prescription and its associated appointment as `done`.
-        This method updates the state of both the MedicalPrescription instance
-        and its linked medical.appointment instance to `done`, indicating that
-        the prescription has been finalized and the appointment has been completed.
-        """
+        """Marks the prescription and its associated appointment as done."""
         self.state = 'done'
         self.appointment_id.state = 'done'
 
@@ -197,11 +182,20 @@ class MedicalPrescription(models.Model):
         if not self.treatment_id:
             raise UserError(_("No treatment selected."))
 
-        #  TREATMENT INVOICE
+        # Use immediate payment term if available
+        payment_term = self.env.ref(
+            'account.account_payment_term_immediate',
+            raise_if_not_found=False
+        )
+        payment_term_id = payment_term.id if payment_term else False
+
+        # TREATMENT INVOICE
         treatment_invoice_vals = {
             'move_type': 'out_invoice',
             'partner_id': self.patient_id.id,
             'state': 'draft',
+            'invoice_date': fields.Date.today(),
+            'invoice_payment_term_id': payment_term_id,
             'invoice_line_ids': [
                 fields.Command.create({
                     'name': self.treatment_id.name,
@@ -213,14 +207,13 @@ class MedicalPrescription(models.Model):
         }
         treatment_invoice = self.env['account.move'].create(treatment_invoice_vals)
 
-        #  PRESCRIPTION INVOICE
+        # PRESCRIPTION INVOICE — build lines and stock moves for consumable medicines
         medicine_invoice_lines = []
         medicine_moves = []
         for rec in self.medicine_ids:
             product = self.env['product.product'].search([
                 ('product_tmpl_id', '=', rec.medicament_id.id)], limit=1)
             if product:
-                # Add medicine line
                 medicine_invoice_lines.append(
                     fields.Command.create({
                         'product_id': product.id,
@@ -229,10 +222,9 @@ class MedicalPrescription(models.Model):
                         'price_unit': rec.price,
                     })
                 )
-
-                # Track movement if stockable
+                # Track consumable products for stock movement
                 if product.type == 'consu':
-                    medicine_moves.append({ 
+                    medicine_moves.append({
                         'product_id': product,
                         'quantity': rec.quantity,
                     })
@@ -244,13 +236,17 @@ class MedicalPrescription(models.Model):
             'move_type': 'out_invoice',
             'partner_id': self.patient_id.id,
             'state': 'draft',
+            'invoice_date': fields.Date.today(),
+            'invoice_payment_term_id': payment_term_id,
             'invoice_line_ids': medicine_invoice_lines,
         }
         prescription_invoice = self.env['account.move'].create(prescription_invoice_vals)
 
-        #  STOCK MOVEMENT
+        # STOCK MOVEMENT — move medicine stock to customer location
         if medicine_moves:
-            warehouse = self.env['stock.warehouse'].search([('company_id', '=', self.env.company.id)], limit=1)
+            warehouse = self.env['stock.warehouse'].search(
+                [('company_id', '=', self.env.company.id)], limit=1
+            )
             if not warehouse:
                 raise UserError(_('No warehouse found for the company. Please configure a warehouse.'))
 
@@ -269,11 +265,9 @@ class MedicalPrescription(models.Model):
                     'state': 'done',
                 })
 
-        # Link only treatment invoice (or both if needed)
         self.invoice_data_id = treatment_invoice.id
         self.state = 'invoiced'
 
-        #  RETURN BOTH INVOICES
         return {
             'type': 'ir.actions.act_window',
             'name': 'Treatment & Prescription Invoices',
@@ -294,8 +288,9 @@ class MedicalPrescription(models.Model):
             'type': 'ir.actions.act_window',
             'res_id': self.invoice_data_id.id,
         }
+
     def action_print_prescription(self):
-        return self.env.ref('medical_clinic.report_pdf_medical_prescription').report_action(self)
+        return self.env.ref('adm_physiotherapy.report_pdf_medical_prescription').report_action(self.id)
 
     def action_open_patient_payments(self):
         self.ensure_one()
@@ -303,6 +298,7 @@ class MedicalPrescription(models.Model):
             'default_treatment_name': self.treatment_id.name,
             'default_treatment_cost': self.cost
         }).action_open_patient_payments()
+
     def _float_time_to_12h(self, float_time):
         """Convert float time (e.g. 23.75) to 12-hour format (11:45 PM)"""
         hours = int(float_time)
@@ -316,8 +312,6 @@ class MedicalPrescription(models.Model):
         display_hour = hours % 12 or 12
 
         return f"{display_hour}:{minutes:02d} {suffix}"
-
-
 
 
 class MedicalPrescriptionLines(models.Model):
@@ -337,22 +331,18 @@ class MedicalPrescriptionLines(models.Model):
                                      related="medicament_id.dosage_strength",
                                      help="Dosage strength of medicament")
     medicament_form = fields.Selection([('tablet', 'Tablets'),
-                             ('capsule', 'Capsules'),
-                             ('liquid', 'Liquid'),
-                             ('injection', 'Injections')],
-                            string="Medicament Form",
-                            required=True,
-                            help="Add the form of the medicine")
+                                        ('capsule', 'Capsules'),
+                                        ('liquid', 'Liquid'),
+                                        ('injection', 'Injections')],
+                                       string="Medicament Form",
+                                       required=True,
+                                       help="Add the form of the medicine")
     quantity = fields.Integer(string="Quantity",
                               required=True,
                               help="Quantity of medicine")
-    # frequency_id = fields.Many2one('medicine.frequency',
-    #                                string="Frequency",
-    #                                required=True,
-    #                                help="Frequency of medicine")
     price = fields.Float(related='medicament_id.list_price',
-                          string="Price",
-                          help="Cost of medicine")
+                         string="Price",
+                         help="Cost of medicine")
     prescription_id = fields.Many2one('medical.prescription',
                                       help="Relate the model with medical_prescription")
     morning = fields.Boolean(string="Morning")
@@ -361,9 +351,5 @@ class MedicalPrescriptionLines(models.Model):
     medicine_take = fields.Selection([
         ('before', 'Before Food'),
         ('after', 'After Food')
-    ], string='Medicine Take',default='after')
+    ], string='Medicine Take', default='after')
     days = fields.Float(string='Days')
-
-
-
-

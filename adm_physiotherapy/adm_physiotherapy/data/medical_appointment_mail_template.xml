@@ -5,27 +5,80 @@
         <record id="email_template_medical_appointment" model="mail.template">
             <field name="name">Medical Appointment Confirmation</field>
             <field name="model_id" ref="adm_physiotherapy.model_medical_appointment"/>
-            <field name="subject">Appointment Confirmation - ${object.appointment_no}</field>
+            <field name="subject">Appointment Confirmed ✅ - ${object.appointment_no} | Dr. ${object.doctor_id.name}</field>
 
-            <field name="email_from">${(user.email_formatted or '')}</field>
+            <!-- Send from company email — not logged-in user -->
+            <field name="email_from">${(object.company_id.email or user.email or '')}</field>
 
-            <!-- Send to both patient + doctor -->
-            <field name="email_to">
-                ${object.patient_id.email or ''},${object.doctor_id.work_email or ''}
-            </field>
+            <!-- Send TO patient -->
+            <field name="email_to">${object.patient_id.email or ''}</field>
+
+            <!-- CC to doctor's work email if available -->
+            <field name="email_cc">${object.doctor_id.work_email or ''}</field>
 
             <field name="body_html" type="html">
-                <p>Dear ${object.patient_id.name},</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
 
-                <p>Your appointment has been successfully created.</p>
+                    <div style="background-color: #2196F3; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+                        <h2 style="color: #ffffff; margin: 0;">Appointment Confirmation</h2>
+                    </div>
 
-                <ul>
-                    <li><strong>Appointment No:</strong> ${object.appointment_no}</li>
-                    <li><strong>Date:</strong> ${object.appointment_date}</li>
-                    <li><strong>Doctor:</strong> ${object.doctor_id.name}</li>
-                </ul>
+                    <div style="padding: 20px;">
+                        <p>Dear <strong>${object.patient_id.name}</strong>,
+                        </p>
+                        <p>Your appointment has been <strong style="color: green;">confirmed</strong> successfully.
+                        </p>
 
-                <p>Thank you.</p>
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Appointment No
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${object.appointment_no}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Patient</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${object.patient_id.name}</td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Doctor</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${object.doctor_id.name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Date &amp; Time
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">
+                                    ${format_datetime(object.appointment_date, dt_format='dd MMM yyyy hh:mm a', lang_code=object.patient_id.lang or 'en_US')}
+                                </td>
+                            </tr>
+                            <tr style="background-color: #f5f5f5;">
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Booking Time</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${object.shift_id.name or 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Treatment Type
+                                </td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${object.urgency or 'Normal'}</td>
+                            </tr>
+                        </table>
+
+                        <p style="color: #666;">If you need to cancel or reschedule, please contact us as soon as
+                            possible.
+                        </p>
+
+                        <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; border-left: 4px solid #FF9800; margin: 20px 0;">
+                            <p style="margin: 0;">
+                                <strong>⚠️ Please arrive 10 minutes before your appointment time.</strong>
+                            </p>
+                        </div>
+
+                        <p>Thank you for choosing our clinic.</p>
+                        <p>Best Regards,
+                            <br/>
+                            <strong>Physiotherapy Management Team</strong>
+                        </p>
+                    </div>
+
+                </div>
             </field>
 
         </record>

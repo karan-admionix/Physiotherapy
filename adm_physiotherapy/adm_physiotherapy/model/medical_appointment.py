@@ -47,6 +47,12 @@ class MedicalAppointment(models.Model):
         store=True
     )
 
+    email = fields.Char(
+        related='patient_id.email',
+        string="Email",
+        store=True
+    )
+
     appointment_no = fields.Char(
         string='Appointment No.',
         readonly=True,
@@ -95,7 +101,6 @@ class MedicalAppointment(models.Model):
         'hr.employee',
         string='Doctor',
         required=True,
-        # domain="[('is_doctor', '=', True)]"
     )
 
     state = fields.Selection(
@@ -134,7 +139,31 @@ class MedicalAppointment(models.Model):
     invoice_count = fields.Integer(
         string="Invoice Count",
         compute="_compute_invoice_count",
-        store=True
+        # store=True
+    )
+
+    consultation_fee = fields.Float(
+        string="Consultation Fee",
+        default=0.0,
+        help="Fee set by admin for this appointment"
+    )
+
+    booking_url = fields.Char(
+        string="Booking URL",
+        compute="_compute_qr_urls"
+    )
+    appointment_url = fields.Char(
+        string="Appointment URL",
+        compute="_compute_qr_urls"
+    )
+
+    booking_qr_image = fields.Binary(
+        string="Booking QR",
+        compute="_compute_qr_urls"
+    )
+    appointment_qr_image = fields.Binary(
+        string="Appointment QR",
+        compute="_compute_qr_urls"
     )
 
     # VALIDATION
@@ -157,14 +186,14 @@ class MedicalAppointment(models.Model):
             else:
                 rec.appointment_end = False
 
-            @api.constrains('appointment_date', 'doctor_id', 'shift_id')
-            def _check_doctor_rules(self):
-                for rec in self:
-                    if not rec.appointment_date or not rec.doctor_id:
-                        continue
+    @api.constrains('appointment_date', 'doctor_id', 'shift_id')
+    def _check_doctor_rules(self):
+        for rec in self:
+            if not rec.appointment_date or not rec.doctor_id:
+                continue
 
-                    if not rec.shift_id:
-                        raise ValidationError(_("Please select a booking time shift."))
+            if not rec.shift_id:
+                raise ValidationError(_("Please select a booking time shift."))
 
             #  Overlap check (20 minutes)
             start = rec.appointment_date
@@ -209,10 +238,16 @@ class MedicalAppointment(models.Model):
                 _("Appointment time must be within doctor's working shift.")
             )
 
-    @api.depends('invoice_id')
+    @api.depends('appointment_no')
     def _compute_invoice_count(self):
         for rec in self:
-            rec.invoice_count = 1 if rec.invoice_id else 0
+            if rec.appointment_no:
+                rec.invoice_count = self.env['account.move'].search_count([
+                    ('invoice_origin', '=', rec.appointment_no),
+                    ('move_type', '=', 'out_invoice'),
+                ])
+            else:
+                rec.invoice_count = 0
 
     @api.onchange("appointment_date")
     def _onchange_appointment_date(self):
@@ -239,7 +274,7 @@ class MedicalAppointment(models.Model):
                 )
             start = vals.get('appointment_date', rec.appointment_date)
 
-            # 🟢 ONLY when calendar resized (end explicitly changed)
+            # ONLY when calendar resized (end explicitly changed)
             if 'appointment_end' in vals and start:
                 end = vals.get('appointment_end')
 
@@ -260,7 +295,7 @@ class MedicalAppointment(models.Model):
                 else:
                     vals['slot_duration'] = '120'
 
-            # 🔒 Validate rules (safe for both form + calendar)
+            #  Validate rules (safe for both form + calendar)
             rec._validate_doctor_time_rules(
                 start,
                 vals.get('doctor_id', rec.doctor_id.id),
@@ -314,71 +349,65 @@ class MedicalAppointment(models.Model):
                                       'date': start_day.date(),
                                   })
 
-    # CREATE
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             start = vals.get('appointment_date')
             slot = vals.get('slot_duration', '30')
 
-            if start:
-                if isinstance(start, str):
-                    start = fields.Datetime.from_string(start)
+        if start:
+            if isinstance(start, str):
+                start = fields.Datetime.from_string(start)
 
-                vals['appointment_end'] = start + timedelta(minutes=int(slot))
+            vals['appointment_end'] = start + timedelta(minutes=int(slot))
 
-                self._validate_doctor_time_rules(
-                    vals.get('appointment_date'),
-                    vals.get('doctor_id'),
-                    vals.get('shift_id'),
-                    vals.get('appointment_end')
-                )
+            self._validate_doctor_time_rules(
+                vals.get('appointment_date'),
+                vals.get('doctor_id'),
+                vals.get('shift_id'),
+                vals.get('appointment_end')
+            )
 
-            if vals.get('patient_id'):
-                patient = self.env['res.partner'].browse(vals['patient_id'])
+        if vals.get('patient_id'):
+            patient = self.env['res.partner'].browse(vals['patient_id'])
 
-                if not patient.patient_no or patient.patient_no == 'New':
-                    patient_no = self.env['ir.sequence'].next_by_code(
-                        'medical.patient'
-                    ) or 'PAT/NEW'
-                    patient.write({'patient_no': patient_no})
-                    vals['patient_no'] = patient_no
-                else:
-                    vals['patient_no'] = patient.patient_no
+            if not patient.patient_no or patient.patient_no == 'New':
+                patient_no = self.env['ir.sequence'].next_by_code(
+                    'medical.patient'
+                ) or 'PAT/NEW'
+                patient.write({'patient_no': patient_no})
+                vals['patient_no'] = patient_no
+            else:
+                vals['patient_no'] = patient.patient_no
 
-                patient.write({
-                    'is_patient': True,
-                    'gender': vals.get('gender', patient.gender),
-                    'patient_age': vals.get('age', patient.patient_age),
-                    'phone': vals.get('mobile', patient.phone),
+            patient.write({
+                'is_patient': True,
+                'gender': vals.get('gender', patient.gender),
+                'patient_age': vals.get('age', patient.patient_age),
+                'phone': vals.get('mobile', patient.phone),
 
-                })
+            })
 
-            if not vals.get('appointment_no'):
-                vals['appointment_no'] = self.env['ir.sequence'].next_by_code(
-                    'medical.appointment'
-                ) or 'APT/NEW'
+        if not vals.get('appointment_no'):
+            vals['appointment_no'] = self.env['ir.sequence'].next_by_code(
+                'medical.appointment'
+            ) or 'APT/NEW'
 
-            if not vals.get('user_name'):
-                vals['user_name'] = self.env.user.name
+        if not vals.get('user_name'):
+            vals['user_name'] = self.env.user.name
 
         records = super().create(vals_list)
+        return records
 
-        # template = self.env.ref(
-        #     'adm_physiotherapy.email_template_medical_appointment',
-        #     raise_if_not_found=False
-        # )
-        #
-        # for rec in records:
-        #     if template and (rec.patient_id.email or rec.doctor_id.work_email):
-        #         template.sudo().send_mail(rec.id, force_send=True)
-        #
-        # return records
+    def action_start(self):
+        for rec in self:
+            if rec.state == 'confirmed':
+                rec.state = 'in_progress'
 
     def _get_local_appt_float_time(self, appointment_date):
         """Convert appointment datetime → local float time"""
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
+        user_tz = pytz.timezone(self.env.user.tz or 'Asia/Kolkata')
+        # user_tz = pytz.timezone(self.env.user.tz or 'UTC')
         local_dt = appointment_date.astimezone(user_tz)
         return local_dt.hour + local_dt.minute / 60.0
 
@@ -460,6 +489,30 @@ class MedicalAppointment(models.Model):
             apt = rec.appointment_no or ''
             rec.display_name = f"{apt} | {patient} | {mobile}"
 
+    @api.depends('appointment_no')
+    def _compute_qr_urls(self):
+        import qrcode
+        import base64
+        from io import BytesIO
+
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
+
+        for rec in self:
+            rec.booking_url = '%s/book-appointment' % base_url
+            rec.appointment_url = '%s/my/appointments/%s' % (base_url, rec.id)
+
+            # Generate Booking QR
+            qr1 = qrcode.make(rec.booking_url)
+            buf1 = BytesIO()
+            qr1.save(buf1, format='PNG')
+            rec.booking_qr_image = base64.b64encode(buf1.getvalue())
+
+            # Generate Appointment QR
+            qr2 = qrcode.make(rec.appointment_url)
+            buf2 = BytesIO()
+            qr2.save(buf2, format='PNG')
+            rec.appointment_qr_image = base64.b64encode(buf2.getvalue())
+
     # ACTIONS
     def _get_appt_end(self, start, slot_duration):
         return start + timedelta(minutes=int(slot_duration))
@@ -491,7 +544,8 @@ class MedicalAppointment(models.Model):
         doctor = self.env['hr.employee'].browse(doctor_id)
         shift = self.env['medical.time.shift'].browse(shift_id)
 
-        user_tz = pytz.timezone(self.env.user.tz or 'UTC')
+        user_tz = pytz.timezone(self.env.user.tz or 'Asia/Kolkata')
+        # user_tz = pytz.timezone(self.env.user.tz or 'UTC')
 
         local_start = appointment_date.astimezone(user_tz)
         local_end = appointment_end.astimezone(user_tz)
@@ -557,42 +611,43 @@ class MedicalAppointment(models.Model):
         for rec in self:
             rec.state = 'draft'
 
-    # def action_confirm(self):
-    #     for rec in self:
-    #         if rec.state != 'draft':
-    #             continue
-    #         rec.state = 'confirmed'
-
     def action_confirm(self):
         template = self.env.ref(
             'adm_physiotherapy.email_template_medical_appointment',
             raise_if_not_found=False
         )
-
         for rec in self:
-            if rec.state != 'draft':
+            if rec.state not in ('draft', 'in_progress'):
                 continue
-
             rec.write({'state': 'confirmed'})
 
-            if template and (rec.patient_id.email or rec.doctor_id.work_email):
-                template.sudo().send_mail(rec.id, force_send=True)
+            # Send email if patient has email — doctor email is CC, not required
+            if template and rec.patient_id.email:
+                try:
+                    template.sudo().send_mail(rec.id, force_send=True)
+                except Exception as e:
+                    # Log error but don't block confirmation
+                    rec.message_post(body=f"Email could not be sent: {str(e)}")
 
     def action_open_patient_form(self):
         self.ensure_one()
+
         if self.state == 'confirmed':
             self.state = 'in_progress'
-            return {
-                'type': 'ir.actions.act_window',
-                'name': 'Patient Form',
-                'res_model': 'res.partner',
-                'view_mode': 'form',
-                'res_id': self.patient_id.id,
-                'target': 'current',
-            }
+
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Patient Form',
+            'res_model': 'res.partner',
+            'view_mode': 'form',
+            'res_id': self.patient_id.id,
+            'target': 'current',
+        }
 
     def action_done(self):
-        self.state = 'done'
+        for rec in self:
+            if rec.state in ('confirmed', 'in_progress'):
+                rec.state = 'done'
 
     def _normalize_time(self, value):
         """Convert 9.30 → 9.5"""
@@ -679,11 +734,8 @@ class MedicalAppointment(models.Model):
     def action_create_invoice(self):
         self.ensure_one()
 
-        if self.invoice_id:
-            raise UserError(_("Invoice already created."))
-
         if self.state != 'done':
-            raise UserError(_("You can only create invoice after appointment is completed."))
+            raise UserError(_("You can only cre`ate invoice after appointment is completed."))
 
         if not self.patient_id:
             raise UserError(_("Patient is required to create invoice."))
@@ -696,7 +748,7 @@ class MedicalAppointment(models.Model):
         if not journal:
             raise UserError(_("Please configure a Sales Journal."))
 
-        # ✅ Fallback payment term
+        # Fallback payment term
         payment_term = self.patient_id.property_payment_term_id
         if not payment_term:
             payment_term = self.env['account.payment.term'].search([], limit=1)
@@ -733,12 +785,26 @@ class MedicalAppointment(models.Model):
 
     def action_view_invoice(self):
         self.ensure_one()
-
+        invoices = self.env['account.move'].search([
+            ('invoice_origin', '=', self.appointment_no),
+            ('move_type', '=', 'out_invoice'),
+        ])
+        if not invoices:
+            return {}
+        if len(invoices) == 1:
+            return {
+                'type': 'ir.actions.act_window',
+                'name': _('Invoice'),
+                'res_model': 'account.move',
+                'view_mode': 'form',
+                'res_id': invoices.id,
+                'target': 'current',
+            }
         return {
             'type': 'ir.actions.act_window',
-            'name': _('Invoice'),
+            'name': _('Invoices'),
             'res_model': 'account.move',
-            'view_mode': 'form',
-            'res_id': self.invoice_id.id,
+            'view_mode': 'list,form',
+            'domain': [('id', 'in', invoices.ids)],
             'target': 'current',
         }

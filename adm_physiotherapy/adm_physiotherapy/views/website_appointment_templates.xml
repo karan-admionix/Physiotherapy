@@ -1,0 +1,1260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- APPOINTMENT BOOKING FORM                                        -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <template id="website_appointment_form" name="Website Appointment">
+        <t t-call="website.layout">
+
+            <!-- ══ HEAD: Only <style> / <link> / <script> go here ══ -->
+            <t t-set="head">
+                <style>
+                    /* ── Google Font ── */
+                    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@600&amp;display=swap');
+
+                    /* ── CSS Variables ── */
+                    :root {
+                    --appt-primary: #0d9488;
+                    --appt-primary-dark: #0f766e;
+                    --appt-primary-light: #ccfbf1;
+                    --appt-accent: #f0fdfa;
+                    --appt-border: #e2e8f0;
+                    --appt-text: #1e293b;
+                    --appt-muted: #64748b;
+                    --appt-white: #ffffff;
+                    --appt-radius: 14px;
+                    --appt-shadow: 0 4px 24px rgba(13,148,136,0.10);
+                    --appt-shadow-lg: 0 8px 40px rgba(13,148,136,0.15);
+                    }
+
+                    /* ── Page wrapper ── */
+                    .appt-page {
+                    background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+                    min-height: 100vh;
+                    padding: 48px 0 64px;
+                    font-family: 'DM Sans', sans-serif;
+                    color: var(--appt-text);
+                    }
+
+                    /* ── Page heading ── */
+                    .appt-heading {
+                    font-family: 'Playfair Display', serif;
+                    font-size: 2.1rem;
+                    font-weight: 600;
+                    color: var(--appt-primary-dark);
+                    text-align: center;
+                    margin-bottom: 6px;
+                    }
+                    .appt-subheading {
+                    text-align: center;
+                    color: var(--appt-muted);
+                    font-size: .95rem;
+                    margin-bottom: 36px;
+                    }
+
+                    /* ── QR card ── */
+                    .appt-qr-card {
+                    background: var(--appt-white);
+                    border: 1.5px solid var(--appt-primary-light);
+                    border-radius: var(--appt-radius);
+                    padding: 20px 24px;
+                    text-align: center;
+                    box-shadow: var(--appt-shadow);
+                    margin-bottom: 36px;
+                    }
+                    .appt-qr-card h6 {
+                    color: var(--appt-primary);
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    }
+                    .appt-qr-card p { font-size: .8rem; color: var(--appt-muted); margin-bottom: 10px; }
+                    .appt-qr-card small { font-size: .72rem; color: #94a3b8; }
+                    .appt-qr-card img {
+                    border: 1px solid var(--appt-border);
+                    border-radius: 10px;
+                    padding: 4px;
+                    }
+
+                    /* ── Main card ── */
+                    .appt-card {
+                    background: var(--appt-white);
+                    border-radius: 20px;
+                    box-shadow: var(--appt-shadow-lg);
+                    overflow: hidden;
+                    }
+
+                    /* ── Left panel (date + slots) ── */
+                    .appt-left {
+                    background: var(--appt-primary);
+                    padding: 36px 32px;
+                    color: var(--appt-white);
+                    }
+                    .appt-left-title {
+                    font-family: 'Playfair Display', serif;
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    }
+                    .appt-left-sub {
+                    font-size: .82rem;
+                    opacity: .8;
+                    margin-bottom: 24px;
+                    }
+
+                    /* ── Date input (left panel) ── */
+                    .appt-date-wrap { position: relative; margin-bottom: 24px; }
+                    .appt-date-wrap label {
+                    display: block;
+                    font-size: .78rem;
+                    font-weight: 600;
+                    letter-spacing: .06em;
+                    text-transform: uppercase;
+                    opacity: .85;
+                    margin-bottom: 6px;
+                    }
+                    .appt-date-input {
+                    width: 100%;
+                    background: rgba(255,255,255,0.15);
+                    border: 1.5px solid rgba(255,255,255,0.35);
+                    border-radius: 10px;
+                    color: #fff;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: .95rem;
+                    padding: 10px 14px;
+                    outline: none;
+                    transition: border-color .2s, background .2s;
+                    color-scheme: dark;
+                    }
+                    .appt-date-input:focus {
+                    border-color: rgba(255,255,255,0.9);
+                    background: rgba(255,255,255,0.22);
+                    }
+                    .appt-date-input:disabled {
+                    opacity: .45;
+                    cursor: not-allowed;
+                    }
+                    .appt-date-hint {
+                    font-size: .75rem;
+                    opacity: .7;
+                    margin-top: 6px;
+                    }
+
+                    /* ── Time slot grid ── */
+                    .appt-slots-label {
+                    font-size: .78rem;
+                    font-weight: 600;
+                    letter-spacing: .06em;
+                    text-transform: uppercase;
+                    opacity: .85;
+                    margin-bottom: 10px;
+                    }
+                    .appt-slot-grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 10px;
+                    }
+                    .appt-slot-btn {
+                    background: rgba(255,255,255,0.15);
+                    border: 1.5px solid rgba(255,255,255,0.30);
+                    border-radius: 10px;
+                    color: #fff;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: .82rem;
+                    font-weight: 500;
+                    padding: 9px 4px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: background .18s, border-color .18s, transform .15s;
+                    user-select: none;
+                    }
+                    .appt-slot-btn:hover:not(.appt-slot-booked) {
+                    background: rgba(255,255,255,0.28);
+                    transform: translateY(-2px);
+                    }
+                    .appt-slot-btn.appt-slot-selected {
+                    background: #fff;
+                    color: var(--appt-primary-dark);
+                    border-color: #fff;
+                    font-weight: 700;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+                    }
+                    .appt-slot-btn.appt-slot-booked {
+                    background: rgba(220,53,69,0.18);
+                    border-color: rgba(220,53,69,0.45);
+                    color: rgba(255,255,255,0.45);
+                    cursor: not-allowed;
+                    text-decoration: line-through;
+                    }
+                    .appt-slots-placeholder {
+                    opacity: .65;
+                    font-size: .85rem;
+                    padding: 12px 0;
+                    }
+
+                    /* ── Legend ── */
+                    .appt-legend {
+                    display: flex;
+                    gap: 16px;
+                    margin-top: 18px;
+                    font-size: .78rem;
+                    opacity: .85;
+                    }
+                    .appt-legend span { display: flex; align-items: center; gap: 5px; }
+                    .appt-legend-dot {
+                    width: 9px; height: 9px;
+                    border-radius: 50%;
+                    display: inline-block;
+                    }
+
+                    /* ── Right panel (form fields) ── */
+                    .appt-right { padding: 36px 36px; }
+                    .appt-right-title {
+                    font-family: 'Playfair Display', serif;
+                    font-size: 1.25rem;
+                    color: var(--appt-primary-dark);
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    }
+                    .appt-right-sub {
+                    font-size: .82rem;
+                    color: var(--appt-muted);
+                    margin-bottom: 26px;
+                    }
+
+                    /* ── Form field group ── */
+                    .appt-field { margin-bottom: 18px; }
+                    .appt-field label {
+                    display: block;
+                    font-size: .78rem;
+                    font-weight: 600;
+                    letter-spacing: .05em;
+                    text-transform: uppercase;
+                    color: var(--appt-muted);
+                    margin-bottom: 6px;
+                    }
+                    .appt-input {
+                    width: 100%;
+                    border: 1.5px solid var(--appt-border);
+                    border-radius: 10px;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: .93rem;
+                    color: var(--appt-text);
+                    padding: 11px 14px;
+                    background: #f8fafc;
+                    outline: none;
+                    transition: border-color .2s, box-shadow .2s, background .2s;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    }
+                    .appt-input:focus {
+                    border-color: var(--appt-primary);
+                    background: var(--appt-white);
+                    box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
+                    }
+                    select.appt-input {
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14'
+                    height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline
+                    points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 14px center;
+                    padding-right: 36px;
+                    }
+
+                    /* ── Booking summary strip ── */
+                    .appt-summary {
+                    background: var(--appt-primary-light);
+                    border: 1.5px solid rgba(13,148,136,0.22);
+                    border-radius: 10px;
+                    padding: 12px 16px;
+                    font-size: .87rem;
+                    color: var(--appt-primary-dark);
+                    font-weight: 500;
+                    margin-bottom: 22px;
+                    display: none;
+                    align-items: center;
+                    gap: 8px;
+                    line-height: 1.5;
+                    }
+                    .appt-summary.visible { display: flex; }
+
+                    /* ── Submit button ── */
+                    .appt-submit-btn {
+                    display: block;
+                    width: 100%;
+                    background: #0d9488;
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 12px;
+                    font-family: 'DM Sans', sans-serif;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    padding: 14px;
+                    cursor: pointer;
+                    letter-spacing: .03em;
+                    transition: background .2s, transform .15s, box-shadow .2s;
+                    box-shadow: 0 4px 16px rgba(13,148,136,0.30);
+                    text-align: center;
+                    line-height: 1.5;
+                    text-decoration: none;
+                    -webkit-appearance: none;
+                    appearance: none;
+                    }
+                    .appt-submit-btn:hover {
+                    background: #0f766e;
+                    color: #ffffff;
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 22px rgba(13,148,136,0.38);
+                    }
+                    .appt-submit-btn:active { transform: translateY(0); }
+
+                    /* ── Responsive ── */
+                    @media (max-width: 767px) {
+                    .appt-left { padding: 28px 20px; }
+                    .appt-right { padding: 28px 20px; }
+                    .appt-slot-grid { grid-template-columns: repeat(3, 1fr); }
+                    }
+                </style>
+            </t>
+            <!-- ══ END HEAD ══ -->
+
+            <!-- ══ BODY: All visible HTML goes here, outside t-set="head" ══ -->
+            <div class="appt-page">
+                <div class="container">
+
+                    <!-- Page Title -->
+                    <h2 class="appt-heading">Book an Appointment</h2>
+                    <p class="appt-subheading">Choose your doctor, pick a date and confirm your slot in seconds.</p>
+
+                    <!-- QR CODE -->
+                    <div class="row justify-content-center mb-4">
+                        <div class="col-md-4">
+                            <t t-if="qr_image">
+                                <div class="appt-qr-card">
+                                    <h6>&#128241; Scan to Book on Your Phone</h6>
+                                    <p>Open this form directly on your mobile device</p>
+                                    <img t-att-src="'data:image/png;base64,%s' % qr_image"
+                                         width="140" height="140"/>
+                                    <br/>
+                                    <small>
+                                        <t t-esc="booking_url"/>
+                                    </small>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- MAIN CARD -->
+                    <div class="appt-card">
+                        <form action="/submit-appointment" method="post" id="appt-form">
+                            <input type="hidden" name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <!--
+                                slot_time select — hidden via CSS,
+                                populated by loadSlots(), read by form POST
+                            -->
+                            <select name="slot_time" id="slot_time" style="display:none;">
+                                <option value="">-- Select Time Slot --</option>
+                            </select>
+
+                            <div class="row g-0">
+
+                                <!-- ══ LEFT PANEL ══ -->
+                                <div class="col-md-5 appt-left">
+                                    <p class="appt-left-title">Select Date &amp; Time</p>
+                                    <p class="appt-left-sub">Available slots update once you pick a doctor.</p>
+
+                                    <!-- Date picker -->
+                                    <div class="appt-date-wrap">
+                                        <label for="appointment_date">Appointment Date</label>
+                                        <input type="date"
+                                               name="appointment_date"
+                                               id="appointment_date"
+                                               class="appt-date-input"
+                                               required="1"
+                                               disabled="disabled"/>
+                                        <p class="appt-date-hint">Please select a doctor first</p>
+                                    </div>
+
+                                    <!-- Time slot grid -->
+                                    <p class="appt-slots-label">Available Time Slots</p>
+                                    <div id="slot-grid" class="appt-slot-grid">
+                                        <p class="appt-slots-placeholder" style="grid-column:1/-1;">
+                                            Select a doctor and date to see slots.
+                                        </p>
+                                    </div>
+
+                                    <!-- Legend -->
+                                    <div class="appt-legend">
+                                        <span>
+                                            <i class="appt-legend-dot" style="background:#fff;"></i>
+                                            Available
+                                        </span>
+                                        <span>
+                                            <i class="appt-legend-dot" style="background:rgba(220,53,69,0.55);"></i>
+                                            Booked
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- ══ END LEFT PANEL ══ -->
+
+                                <!-- ══ RIGHT PANEL ══ -->
+                                <div class="col-md-7 appt-right">
+                                    <p class="appt-right-title">Booking Information</p>
+                                    <p class="appt-right-sub">Fill in your details to confirm the appointment.</p>
+
+                                    <!-- Full Name -->
+                                    <div class="appt-field">
+                                        <label for="appt-name">Full Name</label>
+                                        <input type="text"
+                                               id="appt-name"
+                                               name="name"
+                                               class="appt-input"
+                                               placeholder="e.g. John Doe"
+                                               required="1"/>
+                                    </div>
+
+                                    <!-- Email -->
+                                    <div class="appt-field">
+                                        <label for="appt-email">Email Address</label>
+                                        <input type="email"
+                                               id="appt-email"
+                                               name="email"
+                                               class="appt-input"
+                                               placeholder="e.g. john@email.com"
+                                               required="1"/>
+                                    </div>
+
+                                    <!-- Phone -->
+                                    <div class="appt-field">
+                                        <label for="appt-phone">Contact Number</label>
+                                        <input type="text"
+                                               id="appt-phone"
+                                               name="phone"
+                                               class="appt-input"
+                                               placeholder="e.g. +91 98765 43210"
+                                               required="1"/>
+                                    </div>
+
+                                    <!-- Doctor -->
+                                    <div class="appt-field">
+                                        <label for="doctor_id">Select Doctor</label>
+                                        <select name="doctor_id"
+                                                id="doctor_id"
+                                                class="appt-input"
+                                                required="1">
+                                            <option value="">-- Choose a Doctor --</option>
+                                            <t t-foreach="doctors" t-as="doc">
+                                                <option t-att-value="doc.id">
+                                                    <t t-esc="doc.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+
+                                    <!-- Booking Summary Strip -->
+                                    <div class="appt-summary" id="appt-summary">
+                                        &#128197;
+                                        <span id="summary-text">Your booking details will appear here.</span>
+                                    </div>
+
+                                    <!-- Confirm Button -->
+                                    <button type="submit"
+                                            style="background-color:#159a8c;
+                                                   color:white;
+                                                   border:none;
+                                                   padding:10px 18px;
+                                                   border-radius:6px;">
+                                        Confirm Appointment
+                                    </button>
+
+                                </div>
+                                <!-- ══ END RIGHT PANEL ══ -->
+
+                            </div><!-- /row g-0 -->
+                        </form>
+                    </div><!-- /appt-card -->
+
+                </div><!-- /container -->
+            </div><!-- /appt-page -->
+            <!-- ══ END BODY ══ -->
+
+            <!-- Slot grid rendering logic is handled in appointment_slots.js -->
+
+        </t>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- THANK YOU PAGE                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <template id="website_thank_you" name="Thank You">
+        <t t-call="website.layout">
+            <div class="container py-5 text-center">
+                <div class="mx-auto" style="max-width:480px;">
+                    <div style="font-size:3.5rem; margin-bottom:16px;">&#9989;</div>
+                    <h2 style="font-family:'Playfair Display',serif;color:#0f766e;margin-bottom:12px;">
+                        Appointment Confirmed!
+                    </h2>
+                    <p class="lead text-muted mb-2">Thank you! Your appointment has been booked successfully.</p>
+                    <p class="text-muted mb-4">Our team will reach out to you shortly.</p>
+                    <a href="/book-appointment"
+                       class="btn btn-lg"
+                       style="background:#0d9488;color:#fff;border-radius:12px;padding:12px 32px;font-weight:600;">
+                        Book Another Appointment
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- ERROR PAGE                                                      -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <template id="website_appointment_error" name="Appointment Error">
+        <t t-call="website.layout">
+            <div class="container py-5 text-center">
+                <div class="mx-auto" style="max-width:480px;">
+                    <div style="font-size:3.5rem; margin-bottom:16px;">&#9888;&#65039;</div>
+                    <h2 class="text-danger mb-3">Slot Not Available</h2>
+                    <p class="lead text-muted">
+                        <t t-esc="error_message"/>
+                    </p>
+                    <p class="text-muted">Doctor:
+                        <strong>
+                            <t t-esc="doctor_name"/>
+                        </strong>
+                    </p>
+                    <a href="/book-appointment"
+                       class="btn btn-lg mt-3"
+                       style="background:#0d9488;color:#fff;border-radius:12px;padding:12px 32px;font-weight:600;">
+                        Try Again
+                    </a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAYMENT PAGE                                                    -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <template id="website_appointment_payment" name="Appointment Payment">
+        <t t-call="website.layout">
+            <div class="container py-5">
+
+                <h2 class="text-center mb-4"
+                    style="font-family:'Playfair Display',serif;color:#0f766e;">
+                    Appointment Details
+                </h2>
+
+                <!-- APPOINTMENT SUMMARY — logic unchanged -->
+                <div class="card mb-4"
+                     style="border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(13,148,136,.10);">
+                    <div class="card-header text-white" style="background:#0d9488;">
+                        <h5 class="mb-0">Appointment Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>Appointment No:</strong>
+                                    <t t-esc="appointment.appointment_no"/>
+                                </p>
+                                <p>
+                                    <strong>Patient:</strong>
+                                    <t t-esc="appointment.patient_id.name"/>
+                                </p>
+                                <p>
+                                    <strong>Doctor:</strong>
+                                    <t t-esc="appointment.doctor_id.name"/>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>Date:</strong>
+                                    <span t-field="appointment.appointment_date"
+                                          t-options="{'widget': 'datetime'}"/>
+                                </p>
+                                <!--
+                                <p>
+                                    <strong>Consultation Fee:</strong>
+                                    <span class="fw-bold" style="color:#0d9488;">
+                                        &#8377;
+                                        <t t-esc="appointment.consultation_fee"/>
+                                    </span>
+                                </p>
+                                -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAYMENT METHODS — logic unchanged, commented out -->
+                <!--
+                <div class="card mb-4" style="border-radius:14px;box-shadow:0 4px 24px rgba(13,148,136,.10);">
+                    <div class="card-header">
+                        <h5 class="mb-0">Select Payment Method</h5>
+                    </div>
+                    <div class="card-body">
+                        <t t-if="providers">
+                            <div class="row">
+                                <t t-foreach="providers" t-as="provider">
+                                    <div class="col-md-4 mb-3">
+                                        <a t-att-href="'/appointment/payment/process/%s/%s' % (appointment.id, provider.id)"
+                                           class="btn btn-outline-primary w-100 py-3"
+                                           style="border-radius:10px;border-color:#0d9488;color:#0d9488;">
+                                            <t t-esc="provider.name"/>
+                                        </a>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="alert alert-warning">
+                                No payment methods configured. Please contact admin.
+                            </div>
+                        </t>
+                    </div>
+                </div>
+                -->
+
+                <!-- CANCEL — logic unchanged -->
+                <div class="text-center">
+                    <a t-att-href="'/appointment/payment/cancel?appointment_id=%s' % appointment.id"
+                       class="btn btn-outline-danger"
+                       style="border-radius:10px;">
+                        Cancel Appointment
+                    </a>
+                </div>
+
+            </div>
+
+            <div class="alert alert-success text-center"
+                 style="border-radius:12px;font-size:18px;font-weight:600;">
+                &#9989; Thank you! Your appointment has been booked successfully.
+            </div>
+
+        </t>
+    </template>
+
+</odoo>
+
+        <!--<odoo>-->
+        <!--    <template id="website_appointment_form" name="Website Appointment">-->
+        <!--        <t t-call="website.layout">-->
+
+        <!--        &lt;!&ndash; ==================== HEAD STYLES (injected into <head> via website.layout) ==================== &ndash;&gt;-->
+        <!--        <t t-set="head">-->
+        <!--            <style>-->
+        <!--                /* ── Google Font ── */-->
+        <!--                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@600&amp;display=swap');-->
+
+        <!--                /* ── CSS Variables ── */-->
+        <!--                :root {-->
+        <!--                &#45;&#45;appt-primary: #0d9488;-->
+        <!--                &#45;&#45;appt-primary-dark: #0f766e;-->
+        <!--                &#45;&#45;appt-primary-light: #ccfbf1;-->
+        <!--                &#45;&#45;appt-accent: #f0fdfa;-->
+        <!--                &#45;&#45;appt-border: #e2e8f0;-->
+        <!--                &#45;&#45;appt-text: #1e293b;-->
+        <!--                &#45;&#45;appt-muted: #64748b;-->
+        <!--                &#45;&#45;appt-white: #ffffff;-->
+        <!--                &#45;&#45;appt-radius: 14px;-->
+        <!--                &#45;&#45;appt-shadow: 0 4px 24px rgba(13,148,136,0.10);-->
+        <!--                &#45;&#45;appt-shadow-lg: 0 8px 40px rgba(13,148,136,0.15);-->
+        <!--                }-->
+
+        <!--                /* ── Page wrapper ── */-->
+        <!--                .appt-page {-->
+        <!--                background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);-->
+        <!--                min-height: 100vh;-->
+        <!--                padding: 48px 0 64px;-->
+        <!--                font-family: 'DM Sans', sans-serif;-->
+        <!--                color: var(&#45;&#45;appt-text);-->
+        <!--                }-->
+
+        <!--                /* ── Page heading ── */-->
+        <!--                .appt-heading {-->
+        <!--                font-family: 'Playfair Display', serif;-->
+        <!--                font-size: 2.1rem;-->
+        <!--                font-weight: 600;-->
+        <!--                color: var(&#45;&#45;appt-primary-dark);-->
+        <!--                text-align: center;-->
+        <!--                margin-bottom: 6px;-->
+        <!--                }-->
+        <!--                .appt-subheading {-->
+        <!--                text-align: center;-->
+        <!--                color: var(&#45;&#45;appt-muted);-->
+        <!--                font-size: .95rem;-->
+        <!--                margin-bottom: 36px;-->
+        <!--                }-->
+
+        <!--                /* ── QR card ── */-->
+        <!--                .appt-qr-card {-->
+        <!--                background: var(&#45;&#45;appt-white);-->
+        <!--                border: 1.5px solid var(&#45;&#45;appt-primary-light);-->
+        <!--                border-radius: var(&#45;&#45;appt-radius);-->
+        <!--                padding: 20px 24px;-->
+        <!--                text-align: center;-->
+        <!--                box-shadow: var(&#45;&#45;appt-shadow);-->
+        <!--                margin-bottom: 36px;-->
+        <!--                }-->
+        <!--                .appt-qr-card h6 {-->
+        <!--                color: var(&#45;&#45;appt-primary);-->
+        <!--                font-weight: 600;-->
+        <!--                margin-bottom: 4px;-->
+        <!--                }-->
+        <!--                .appt-qr-card p { font-size: .8rem; color: var(&#45;&#45;appt-muted); margin-bottom: 10px; }-->
+        <!--                .appt-qr-card small { font-size: .72rem; color: #94a3b8; }-->
+        <!--                .appt-qr-card img {-->
+        <!--                border: 1px solid var(&#45;&#45;appt-border);-->
+        <!--                border-radius: 10px;-->
+        <!--                padding: 4px;-->
+        <!--                }-->
+
+        <!--                /* ── Main card ── */-->
+        <!--                .appt-card {-->
+        <!--                background: var(&#45;&#45;appt-white);-->
+        <!--                border-radius: 20px;-->
+        <!--                box-shadow: var(&#45;&#45;appt-shadow-lg);-->
+        <!--                overflow: hidden;-->
+        <!--                }-->
+
+        <!--                /* ── Left panel (date + slots) ── */-->
+        <!--                .appt-left {-->
+        <!--                background: var(&#45;&#45;appt-primary);-->
+        <!--                padding: 36px 32px;-->
+        <!--                color: var(&#45;&#45;appt-white);-->
+        <!--                }-->
+        <!--                .appt-left-title {-->
+        <!--                font-family: 'Playfair Display', serif;-->
+        <!--                font-size: 1.25rem;-->
+        <!--                font-weight: 600;-->
+        <!--                margin-bottom: 4px;-->
+        <!--                }-->
+        <!--                .appt-left-sub {-->
+        <!--                font-size: .82rem;-->
+        <!--                opacity: .8;-->
+        <!--                margin-bottom: 24px;-->
+        <!--                }-->
+
+        <!--                /* ── Date input (left panel) ── */-->
+        <!--                .appt-date-wrap { position: relative; margin-bottom: 24px; }-->
+        <!--                .appt-date-wrap label {-->
+        <!--                display: block;-->
+        <!--                font-size: .78rem;-->
+        <!--                font-weight: 600;-->
+        <!--                letter-spacing: .06em;-->
+        <!--                text-transform: uppercase;-->
+        <!--                opacity: .85;-->
+        <!--                margin-bottom: 6px;-->
+        <!--                }-->
+        <!--                .appt-date-input {-->
+        <!--                width: 100%;-->
+        <!--                background: rgba(255,255,255,0.15);-->
+        <!--                border: 1.5px solid rgba(255,255,255,0.35);-->
+        <!--                border-radius: 10px;-->
+        <!--                color: #fff;-->
+        <!--                font-family: 'DM Sans', sans-serif;-->
+        <!--                font-size: .95rem;-->
+        <!--                padding: 10px 14px;-->
+        <!--                outline: none;-->
+        <!--                transition: border-color .2s, background .2s;-->
+        <!--                color-scheme: dark;-->
+        <!--                }-->
+        <!--                .appt-date-input:focus {-->
+        <!--                border-color: rgba(255,255,255,0.9);-->
+        <!--                background: rgba(255,255,255,0.22);-->
+        <!--                }-->
+        <!--                .appt-date-input:disabled {-->
+        <!--                opacity: .45;-->
+        <!--                cursor: not-allowed;-->
+        <!--                }-->
+        <!--                .appt-date-hint {-->
+        <!--                font-size: .75rem;-->
+        <!--                opacity: .7;-->
+        <!--                margin-top: 6px;-->
+        <!--                }-->
+
+        <!--                /* ── Time slot grid ── */-->
+        <!--                .appt-slots-label {-->
+        <!--                font-size: .78rem;-->
+        <!--                font-weight: 600;-->
+        <!--                letter-spacing: .06em;-->
+        <!--                text-transform: uppercase;-->
+        <!--                opacity: .85;-->
+        <!--                margin-bottom: 10px;-->
+        <!--                }-->
+        <!--                .appt-slot-grid {-->
+        <!--                display: grid;-->
+        <!--                grid-template-columns: repeat(3, 1fr);-->
+        <!--                gap: 10px;-->
+        <!--                }-->
+        <!--                .appt-slot-btn {-->
+        <!--                background: rgba(255,255,255,0.15);-->
+        <!--                border: 1.5px solid rgba(255,255,255,0.30);-->
+        <!--                border-radius: 10px;-->
+        <!--                color: #fff;-->
+        <!--                font-family: 'DM Sans', sans-serif;-->
+        <!--                font-size: .82rem;-->
+        <!--                font-weight: 500;-->
+        <!--                padding: 9px 4px;-->
+        <!--                text-align: center;-->
+        <!--                cursor: pointer;-->
+        <!--                transition: background .18s, border-color .18s, transform .15s;-->
+        <!--                user-select: none;-->
+        <!--                }-->
+        <!--                .appt-slot-btn:hover:not(.appt-slot-booked) {-->
+        <!--                background: rgba(255,255,255,0.28);-->
+        <!--                transform: translateY(-2px);-->
+        <!--                }-->
+        <!--                .appt-slot-btn.appt-slot-selected {-->
+        <!--                background: #fff;-->
+        <!--                color: var(&#45;&#45;appt-primary-dark);-->
+        <!--                border-color: #fff;-->
+        <!--                font-weight: 700;-->
+        <!--                box-shadow: 0 2px 10px rgba(0,0,0,0.15);-->
+        <!--                }-->
+        <!--                .appt-slot-btn.appt-slot-booked {-->
+        <!--                background: rgba(220,53,69,0.18);-->
+        <!--                border-color: rgba(220,53,69,0.45);-->
+        <!--                color: rgba(255,255,255,0.45);-->
+        <!--                cursor: not-allowed;-->
+        <!--                text-decoration: line-through;-->
+        <!--                }-->
+        <!--                .appt-slots-placeholder {-->
+        <!--                opacity: .65;-->
+        <!--                font-size: .85rem;-->
+        <!--                padding: 12px 0;-->
+        <!--                }-->
+
+        <!--                /* ── Legend ── */-->
+        <!--                .appt-legend {-->
+        <!--                display: flex;-->
+        <!--                gap: 16px;-->
+        <!--                margin-top: 18px;-->
+        <!--                font-size: .78rem;-->
+        <!--                opacity: .85;-->
+        <!--                }-->
+        <!--                .appt-legend span { display: flex; align-items: center; gap: 5px; }-->
+        <!--                .appt-legend-dot {-->
+        <!--                width: 9px; height: 9px;-->
+        <!--                border-radius: 50%;-->
+        <!--                display: inline-block;-->
+        <!--                }-->
+
+        <!--                /* ── Right panel (form fields) ── */-->
+        <!--                .appt-right {-->
+        <!--                padding: 36px 36px;-->
+        <!--                }-->
+        <!--                .appt-right-title {-->
+        <!--                font-family: 'Playfair Display', serif;-->
+        <!--                font-size: 1.25rem;-->
+        <!--                color: var(&#45;&#45;appt-primary-dark);-->
+        <!--                font-weight: 600;-->
+        <!--                margin-bottom: 4px;-->
+        <!--                }-->
+        <!--                .appt-right-sub {-->
+        <!--                font-size: .82rem;-->
+        <!--                color: var(&#45;&#45;appt-muted);-->
+        <!--                margin-bottom: 26px;-->
+        <!--                }-->
+
+        <!--                /* ── Form field group ── */-->
+        <!--                .appt-field { margin-bottom: 18px; }-->
+        <!--                .appt-field label {-->
+        <!--                display: block;-->
+        <!--                font-size: .78rem;-->
+        <!--                font-weight: 600;-->
+        <!--                letter-spacing: .05em;-->
+        <!--                text-transform: uppercase;-->
+        <!--                color: var(&#45;&#45;appt-muted);-->
+        <!--                margin-bottom: 6px;-->
+        <!--                }-->
+        <!--                .appt-input {-->
+        <!--                width: 100%;-->
+        <!--                border: 1.5px solid var(&#45;&#45;appt-border);-->
+        <!--                border-radius: 10px;-->
+        <!--                font-family: 'DM Sans', sans-serif;-->
+        <!--                font-size: .93rem;-->
+        <!--                color: var(&#45;&#45;appt-text);-->
+        <!--                padding: 11px 14px;-->
+        <!--                background: #f8fafc;-->
+        <!--                outline: none;-->
+        <!--                transition: border-color .2s, box-shadow .2s, background .2s;-->
+        <!--                appearance: none;-->
+        <!--                -webkit-appearance: none;-->
+        <!--                }-->
+        <!--                .appt-input:focus {-->
+        <!--                border-color: var(&#45;&#45;appt-primary);-->
+        <!--                background: var(&#45;&#45;appt-white);-->
+        <!--                box-shadow: 0 0 0 3px rgba(13,148,136,0.12);-->
+        <!--                }-->
+        <!--                select.appt-input {-->
+        <!--                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14'-->
+        <!--                height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline-->
+        <!--                points='6 9 12 15 18 9'/%3E%3C/svg%3E");-->
+        <!--                background-repeat: no-repeat;-->
+        <!--                background-position: right 14px center;-->
+        <!--                padding-right: 36px;-->
+        <!--                }-->
+
+        <!--                /* ── Booking summary strip ── */-->
+        <!--                .appt-summary {-->
+        <!--                background: var(&#45;&#45;appt-primary-light);-->
+        <!--                border: 1.5px solid rgba(13,148,136,0.22);-->
+        <!--                border-radius: 10px;-->
+        <!--                padding: 12px 16px;-->
+        <!--                font-size: .87rem;-->
+        <!--                color: var(&#45;&#45;appt-primary-dark);-->
+        <!--                font-weight: 500;-->
+        <!--                margin-bottom: 22px;-->
+        <!--                display: none;-->
+        <!--                align-items: center;-->
+        <!--                gap: 8px;-->
+        <!--                line-height: 1.5;-->
+        <!--                }-->
+        <!--                .appt-summary.visible {-->
+        <!--                display: flex;-->
+        <!--                }-->
+
+        <!--                /* ── Submit button ── */-->
+        <!--                .appt-submit-btn {-->
+        <!--                display: block;-->
+        <!--                width: 100%;-->
+        <!--                background: #0d9488;-->
+        <!--                color: #ffffff;-->
+        <!--                border: none;-->
+        <!--                border-radius: 12px;-->
+        <!--                font-family: 'DM Sans', sans-serif;-->
+        <!--                font-size: 1rem;-->
+        <!--                font-weight: 600;-->
+        <!--                padding: 14px;-->
+        <!--                cursor: pointer;-->
+        <!--                letter-spacing: .03em;-->
+        <!--                transition: background .2s, transform .15s, box-shadow .2s;-->
+        <!--                box-shadow: 0 4px 16px rgba(13,148,136,0.30);-->
+        <!--                text-align: center;-->
+        <!--                line-height: 1.5;-->
+        <!--                text-decoration: none;-->
+        <!--                -webkit-appearance: none;-->
+        <!--                appearance: none;-->
+        <!--                }-->
+        <!--                .appt-submit-btn:hover {-->
+        <!--                background: #0f766e;-->
+        <!--                color: #ffffff;-->
+        <!--                transform: translateY(-2px);-->
+        <!--                box-shadow: 0 6px 22px rgba(13,148,136,0.38);-->
+        <!--                }-->
+        <!--                .appt-submit-btn:active {-->
+        <!--                transform: translateY(0);-->
+        <!--                }-->
+
+        <!--                /* ── Responsive ── */-->
+        <!--                @media (max-width: 767px) {-->
+        <!--                .appt-left { padding: 28px 20px; }-->
+        <!--                .appt-right { padding: 28px 20px; }-->
+        <!--                .appt-slot-grid { grid-template-columns: repeat(3, 1fr); }-->
+        <!--                }-->
+        <!--            </style>-->
+
+        <!--            <div class="appt-page">-->
+        <!--                <div class="container">-->
+
+        <!--                    &lt;!&ndash; Page Title &ndash;&gt;-->
+        <!--                    <h2 class="appt-heading">Book an Appointment</h2>-->
+        <!--                    <p class="appt-subheading">Choose your doctor, pick a date and confirm your slot in seconds.</p>-->
+
+        <!--                    &lt;!&ndash; QR CODE &ndash;&gt;-->
+        <!--                    <div class="row justify-content-center mb-4">-->
+        <!--                        <div class="col-md-4">-->
+        <!--                            <t t-if="qr_image">-->
+        <!--                                <div class="appt-qr-card">-->
+        <!--                                    <h6>📱 Scan to Book on Your Phone</h6>-->
+        <!--                                    <p>Open this form directly on your mobile device</p>-->
+        <!--                                    <img t-att-src="'data:image/png;base64,%s' % qr_image"-->
+        <!--                                         width="140" height="140"/>-->
+        <!--                                    <br/>-->
+        <!--                                    <small>-->
+        <!--                                        <t t-esc="booking_url"/>-->
+        <!--                                    </small>-->
+        <!--                                </div>-->
+        <!--                            </t>-->
+        <!--                        </div>-->
+        <!--                    </div>-->
+
+        <!--                    &lt;!&ndash; MAIN CARD &ndash;&gt;-->
+        <!--                    <div class="appt-card">-->
+        <!--                        <form action="/submit-appointment" method="post" id="appt-form">-->
+        <!--                            <input type="hidden" name="csrf_token"-->
+        <!--                                   t-att-value="request.csrf_token()"/>-->
+        <!--                            &lt;!&ndash; slot_time select — hidden via CSS, populated by loadSlots(), read by form POST &ndash;&gt;-->
+        <!--                            <select name="slot_time" id="slot_time" style="display:none;">-->
+        <!--                                <option value="">&#45;&#45; Select Time Slot &#45;&#45;</option>-->
+        <!--                            </select>-->
+
+        <!--                            <div class="row g-0">-->
+
+        <!--                                &lt;!&ndash; ══ LEFT PANEL ══ &ndash;&gt;-->
+        <!--                                <div class="col-md-5 appt-left">-->
+        <!--                                    <p class="appt-left-title">Select Date &amp; Time</p>-->
+        <!--                                    <p class="appt-left-sub">Available slots update once you pick a doctor.</p>-->
+
+        <!--                                    &lt;!&ndash; Date picker &ndash;&gt;-->
+        <!--                                    <div class="appt-date-wrap">-->
+        <!--                                        <label for="appointment_date">Appointment Date</label>-->
+        <!--                                        <input type="date"-->
+        <!--                                               name="appointment_date"-->
+        <!--                                               id="appointment_date"-->
+        <!--                                               class="appt-date-input"-->
+        <!--                                               required="1"-->
+        <!--                                               disabled="disabled"/>-->
+        <!--                                        <p class="appt-date-hint">Please select a doctor first</p>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Time slot grid &ndash;&gt;-->
+        <!--                                    <p class="appt-slots-label">Available Time Slots</p>-->
+        <!--                                    <div id="slot-grid" class="appt-slot-grid">-->
+        <!--                                        <p class="appt-slots-placeholder" style="grid-column:1/-1;">-->
+        <!--                                            Select a doctor and date to see slots.-->
+        <!--                                        </p>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Legend &ndash;&gt;-->
+        <!--                                    <div class="appt-legend">-->
+        <!--                                        <span>-->
+        <!--                                            <i class="appt-legend-dot" style="background:#fff;"></i>-->
+        <!--                                            Available-->
+        <!--                                        </span>-->
+        <!--                                        <span>-->
+        <!--                                            <i class="appt-legend-dot" style="background:rgba(220,53,69,0.55);"></i>-->
+        <!--                                            Booked-->
+        <!--                                        </span>-->
+        <!--                                    </div>-->
+        <!--                                </div>-->
+
+        <!--                                &lt;!&ndash; ══ RIGHT PANEL ══ &ndash;&gt;-->
+        <!--                                <div class="col-md-7 appt-right">-->
+        <!--                                    <p class="appt-right-title">Booking Information</p>-->
+        <!--                                    <p class="appt-right-sub">Fill in your details to confirm the appointment.</p>-->
+
+        <!--                                    &lt;!&ndash; Full Name &ndash;&gt;-->
+        <!--                                    <div class="appt-field">-->
+        <!--                                        <label for="appt-name">Full Name</label>-->
+        <!--                                        <input type="text"-->
+        <!--                                               id="appt-name"-->
+        <!--                                               name="name"-->
+        <!--                                               class="appt-input"-->
+        <!--                                               placeholder="e.g. John Doe"-->
+        <!--                                               required="1"/>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Email &ndash;&gt;-->
+        <!--                                    <div class="appt-field">-->
+        <!--                                        <label for="appt-email">Email Address</label>-->
+        <!--                                        <input type="email"-->
+        <!--                                               id="appt-email"-->
+        <!--                                               name="email"-->
+        <!--                                               class="appt-input"-->
+        <!--                                               placeholder="e.g. john@email.com"-->
+        <!--                                               required="1"/>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Phone &ndash;&gt;-->
+        <!--                                    <div class="appt-field">-->
+        <!--                                        <label for="appt-phone">Contact Number</label>-->
+        <!--                                        <input type="text"-->
+        <!--                                               id="appt-phone"-->
+        <!--                                               name="phone"-->
+        <!--                                               class="appt-input"-->
+        <!--                                               placeholder="e.g. +91 98765 43210"-->
+        <!--                                               required="1"/>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Doctor &ndash;&gt;-->
+        <!--                                    <div class="appt-field">-->
+        <!--                                        <label for="doctor_id">Select Doctor</label>-->
+        <!--                                        <select name="doctor_id"-->
+        <!--                                                id="doctor_id"-->
+        <!--                                                class="appt-input"-->
+        <!--                                                required="1">-->
+        <!--                                            <option value="">&#45;&#45; Choose a Doctor &#45;&#45;</option>-->
+        <!--                                            <t t-foreach="doctors" t-as="doc">-->
+        <!--                                                <option t-att-value="doc.id">-->
+        <!--                                                    <t t-esc="doc.name"/>-->
+        <!--                                                </option>-->
+        <!--                                            </t>-->
+        <!--                                        </select>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Booking Summary Strip &ndash;&gt;-->
+        <!--                                    <div class="appt-summary" id="appt-summary">-->
+        <!--                                        🗓️-->
+        <!--                                        <span id="summary-text">Your booking details will appear here.</span>-->
+        <!--                                    </div>-->
+
+        <!--                                    &lt;!&ndash; Confirm Button &ndash;&gt;-->
+        <!--                                    <button type="submit" class="appt-submit-btn">-->
+        <!--                                        Confirm Appointment-->
+        <!--                                    </button>-->
+
+        <!--                                </div>&lt;!&ndash; /col right &ndash;&gt;-->
+        <!--                            </div>&lt;!&ndash; /row &ndash;&gt;-->
+        <!--                        </form>-->
+        <!--                    </div>&lt;!&ndash; /appt-card &ndash;&gt;-->
+
+        <!--                </div>&lt;!&ndash; /container &ndash;&gt;-->
+        <!--            </div>&lt;!&ndash; /appt-page &ndash;&gt;-->
+
+        <!--            &lt;!&ndash; Slot grid rendering logic is handled in appointment_slots.js &ndash;&gt;-->
+
+        <!--        </t>-->
+        <!--    </template>-->
+
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    &lt;!&ndash; THANK YOU — unchanged logic, refreshed styling                 &ndash;&gt;-->
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    <template id="website_thank_you" name="Thank You">-->
+        <!--        <t t-call="website.layout">-->
+        <!--            <div class="container py-5 text-center">-->
+        <!--                <div class="mx-auto" style="max-width:480px;">-->
+        <!--                    <div style="font-size:3.5rem; margin-bottom:16px;">✅</div>-->
+        <!--                    <h2 style="font-family:'Playfair Display',serif;color:#0f766e;margin-bottom:12px;">-->
+        <!--                        Appointment Confirmed!-->
+        <!--                    </h2>-->
+        <!--                    <p class="lead text-muted mb-2">Thank you! Your appointment has been booked successfully.</p>-->
+        <!--                    <p class="text-muted mb-4">Our team will reach out to you shortly.</p>-->
+        <!--                    <a href="/book-appointment"-->
+        <!--                       class="btn btn-lg"-->
+        <!--                       style="background:#0d9488;color:#fff;border-radius:12px;padding:12px 32px;font-weight:600;">-->
+        <!--                        Book Another Appointment-->
+        <!--                    </a>-->
+        <!--                </div>-->
+        <!--            </div>-->
+        <!--        </t>-->
+        <!--    </template>-->
+
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    &lt;!&ndash; ERROR PAGE — unchanged logic, refreshed styling                &ndash;&gt;-->
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    <template id="website_appointment_error" name="Appointment Error">-->
+        <!--        <t t-call="website.layout">-->
+        <!--            <div class="container py-5 text-center">-->
+        <!--                <div class="mx-auto" style="max-width:480px;">-->
+        <!--                    <div style="font-size:3.5rem; margin-bottom:16px;">⚠️</div>-->
+        <!--                    <h2 class="text-danger mb-3">Slot Not Available</h2>-->
+        <!--                    <p class="lead text-muted">-->
+        <!--                        <t t-esc="error_message"/>-->
+        <!--                    </p>-->
+        <!--                    <p class="text-muted">Doctor:-->
+        <!--                        <strong>-->
+        <!--                            <t t-esc="doctor_name"/>-->
+        <!--                        </strong>-->
+        <!--                    </p>-->
+        <!--                    <a href="/book-appointment"-->
+        <!--                       class="btn btn-lg mt-3"-->
+        <!--                       style="background:#0d9488;color:#fff;border-radius:12px;padding:12px 32px;font-weight:600;">-->
+        <!--                        Try Again-->
+        <!--                    </a>-->
+        <!--                </div>-->
+        <!--            </div>-->
+        <!--        </t>-->
+        <!--    </template>-->
+
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    &lt;!&ndash; PAYMENT PAGE — unchanged logic, refreshed styling              &ndash;&gt;-->
+        <!--    &lt;!&ndash; ══════════════════════════════════════════════════════════════ &ndash;&gt;-->
+        <!--    <template id="website_appointment_payment" name="Appointment Payment">-->
+        <!--        <t t-call="website.layout">-->
+        <!--            <div class="container py-5">-->
+
+        <!--                <h2 class="text-center mb-4"-->
+        <!--                    style="font-family:'Playfair Display',serif;color:#0f766e;">-->
+        <!--                    Appointment Details-->
+        <!--                </h2>-->
+
+        <!--                &lt;!&ndash; APPOINTMENT SUMMARY — logic unchanged &ndash;&gt;-->
+        <!--                <div class="card mb-4"-->
+        <!--                     style="border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(13,148,136,.10);">-->
+        <!--                    <div class="card-header text-white"-->
+        <!--                         style="background:#0d9488;">-->
+        <!--                        <h5 class="mb-0">Appointment Summary</h5>-->
+        <!--                    </div>-->
+        <!--                    <div class="card-body">-->
+        <!--                        <div class="row">-->
+        <!--                            <div class="col-md-6">-->
+        <!--                                <p>-->
+        <!--                                    <strong>Appointment No:</strong>-->
+        <!--                                    <t t-esc="appointment.appointment_no"/>-->
+        <!--                                </p>-->
+        <!--                                <p>-->
+        <!--                                    <strong>Patient:</strong>-->
+        <!--                                    <t t-esc="appointment.patient_id.name"/>-->
+        <!--                                </p>-->
+        <!--                                <p>-->
+        <!--                                    <strong>Doctor:</strong>-->
+        <!--                                    <t t-esc="appointment.doctor_id.name"/>-->
+        <!--                                </p>-->
+        <!--                            </div>-->
+        <!--                            <div class="col-md-6">-->
+        <!--                                <p>-->
+        <!--                                    <strong>Date:</strong>-->
+        <!--                                    <span t-field="appointment.appointment_date"-->
+        <!--                                          t-options="{'widget': 'datetime'}"/>-->
+        <!--                                </p>-->
+        <!--                                &lt;!&ndash;                                <p>&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                    <strong>Consultation Fee:</strong>&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                    <span class="fw-bold" style="color:#0d9488;">&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                        ₹&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                        <t t-esc="appointment.consultation_fee"/>&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                    </span>&ndash;&gt;-->
+        <!--                                &lt;!&ndash;                                </p>&ndash;&gt;-->
+        <!--                            </div>-->
+        <!--                        </div>-->
+        <!--                    </div>-->
+        <!--                </div>-->
+
+        <!--                &lt;!&ndash; PAYMENT METHODS — logic unchanged &ndash;&gt;-->
+        <!--                &lt;!&ndash;                <div class="card mb-4" style="border-radius:14px;box-shadow:0 4px 24px rgba(13,148,136,.10);">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                    <div class="card-header">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                        <h5 class="mb-0">Select Payment Method</h5>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                    </div>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                    <div class="card-body">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                        <t t-if="providers">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                            <div class="row">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                <t t-foreach="providers" t-as="provider">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                    <div class="col-md-4 mb-3">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                        <a t-att-href="'/appointment/payment/process/%s/%s' % (appointment.id, provider.id)"&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                           class="btn btn-outline-primary w-100 py-3"&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                           style="border-radius:10px;border-color:#0d9488;color:#0d9488;">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                            <t t-esc="provider.name"/>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                        </a>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                    </div>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                </t>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                            </div>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                        </t>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                        <t t-else="">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                            <div class="alert alert-warning">&ndash;&gt;-->
+        <!--                &lt;!&ndash;                                No payment methods configured. Please contact admin.&ndash;&gt;-->
+        <!--                &lt;!&ndash;                            </div>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                        </t>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                    </div>&ndash;&gt;-->
+        <!--                &lt;!&ndash;                </div>&ndash;&gt;-->
+
+        <!--                &lt;!&ndash; CANCEL — logic unchanged &ndash;&gt;-->
+        <!--                <div class="text-center">-->
+        <!--                    <a t-att-href="'/appointment/payment/cancel?appointment_id=%s' % appointment.id"-->
+        <!--                       class="btn btn-outline-danger"-->
+        <!--                       style="border-radius:10px;">-->
+        <!--                        Cancel Appointment-->
+        <!--                    </a>-->
+        <!--                </div>-->
+
+        <!--            </div>-->
+        <!--            <div class="alert alert-success text-center"-->
+        <!--                 style="border-radius:12px;font-size:18px;font-weight:600;">-->
+        <!--                ✅ Thank you! Your appointment has been booked successfully.-->
+        <!--            </div>-->
+        <!--        </t>-->
+        <!--    </template>-->
+
+        <!--</odoo>-->

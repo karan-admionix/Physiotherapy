@@ -2,6 +2,7 @@ from odoo import models, fields
 
 
 class HrEmployeePublic(models.Model):
+    # Extend hr.employee.public to add physiotherapy-specific fields
     _inherit = "hr.employee.public"
 
     job_position = fields.Char(string="Designation")
@@ -9,6 +10,8 @@ class HrEmployeePublic(models.Model):
     dob = fields.Date(string="Date of Birth")
     doctor_age = fields.Integer(string="Age")
     sex = fields.Selection([('male', 'Male'), ('female', 'Female')], string="Gender")
+
+    # Available time shifts assigned to this employee/doctor
     time_shift_ids = fields.Many2many(
         'medical.time.shift',
         'hr_employee_medical_time_shift_rel',
@@ -16,6 +19,7 @@ class HrEmployeePublic(models.Model):
         'medical_time_shift_id',
         string="Time Shift"
     )
+
     is_doctor = fields.Boolean(string="Is a Doctor")
     employee_type = fields.Selection([
         ('doctor', 'Doctor'),

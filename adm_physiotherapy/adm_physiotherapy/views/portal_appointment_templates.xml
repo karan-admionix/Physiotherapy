@@ -1,59 +1,543 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
+    <!-- APPOINTMENT LIST -->
     <template id="portal_appointment_templates" name="My Appointments">
         <t t-call="portal.portal_layout">
 
             <t t-set="breadcrumbs_searchbar" t-value="True"/>
-
             <t t-call="portal.portal_searchbar">
-                <t t-set="title">Appointments</t>
+                <t t-set="title">My Appointments</t>
             </t>
 
-            <t t-if="not appointments">
-                <p class="alert alert-warning">
-                    There are currently no appointments for your account.
-                </p>
-            </t>
-
-            <t t-if="appointments" t-call="portal.portal_table">
-                <thead>
-                    <tr class="active">
-                        <th>Appointment No</th>
-                        <th>Patient</th>
-                        <th>Doctor</th>
-                        <th class="text-end">Date</th>
-                        <th class="text-end">Status</th>
-                    </tr>
-                </thead>
-
-                <t t-foreach="appointments" t-as="app">
-                    <tr>
-                        <td>
-                            <a t-att-href="'/my/appointments/%s' % app.id">
-                                <t t-esc="app.appointment_no"/>
-                            </a>
-                        </td>
-
-                        <td>
-                            <t t-esc="app.patient_id.name"/>
-                        </td>
-
-                        <td>
-                            <t t-esc="app.doctor_id.name"/>
-                        </td>
-
-                        <td class="text-end">
-                            <span t-field="app.appointment_date"
-                                  t-options="{'widget': 'datetime'}"/>
-                        </td>
-
-                        <td class="text-end">
-                            <span t-esc="app.state"/>
-                        </td>
-                    </tr>
+            <!-- ROLE BADGE -->
+            <div class="mb-3">
+                <t t-if="portal_role == 'admin'">
+                    <span class="badge bg-danger fs-6">Admin View — All Appointments</span>
                 </t>
-            </t>
+                <t t-elif="portal_role == 'doctor'">
+                    <span class="badge bg-primary fs-6">🩺 Doctor View</span>
+                </t>
+                <t t-else="">
+                    <span class="badge bg-success fs-6">👤 Patient View</span>
+                </t>
+            </div>
+
+            <!-- WAITING LIST SECTION -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-warning">⏳ Today's Waiting List</h5>
+                <t t-if="not waiting_list">
+                    <div class="alert alert-secondary">No patients in waiting list today.</div>
+                </t>
+                <t t-if="waiting_list" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>#</th>
+                            <th>Appointment No</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Time</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="waiting_list" t-as="app">
+                            <tr>
+                                <td>
+                                    <t t-esc="app_index + 1"/>
+                                </td>
+                                <td>
+                                    <strong>
+                                        <a t-att-href="'/my/appointments/%s' % app.id"
+                                           class="text-decoration-none">
+                                            <t t-esc="app.appointment_no"/>
+                                        </a>
+                                    </strong>
+                                </td>
+                                <td>
+                                    <t t-esc="app.patient_id.name"/>
+                                </td>
+                                <td>
+                                    <t t-esc="app.doctor_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="app.appointment_date"
+                                          t-options="{'widget': 'datetime'}"/>
+                                </td>
+                                <td class="text-center">
+                                    <span t-att-class="'badge px-3 py-2 ' + {
+                                        'confirmed': 'bg-success',
+                                        'in_progress': 'bg-primary',
+                                    }.get(app.state, 'bg-secondary')">
+                                        <t t-esc="{
+                                            'confirmed': '✅ Confirmed',
+                                            'in_progress': '🔄 In Progress',
+                                        }.get(app.state, app.state)"/>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a t-att-href="'/my/appointments/%s' % app.id"
+                                       class="btn btn-sm btn-outline-primary">View
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
+            </div>
+
+            <!-- UPCOMING APPOINTMENTS -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-primary">📅 Upcoming Appointments</h5>
+                <t t-if="not upcoming">
+                    <div class="alert alert-secondary">No upcoming appointments.</div>
+                </t>
+                <t t-if="upcoming" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>#</th>
+                            <th>Appointment No</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date &amp; Time</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="upcoming" t-as="app">
+                            <tr>
+                                <td>
+                                    <t t-esc="app_index + 1"/>
+                                </td>
+                                <td>
+                                    <strong>
+                                        <a t-att-href="'/my/appointments/%s' % app.id"
+                                           class="text-decoration-none">
+                                            <t t-esc="app.appointment_no"/>
+                                        </a>
+                                    </strong>
+                                </td>
+                                <td>
+                                    <t t-esc="app.patient_id.name"/>
+                                </td>
+                                <td>
+                                    <t t-esc="app.doctor_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="app.appointment_date"
+                                          t-options="{'widget': 'datetime'}"/>
+                                </td>
+                                <td class="text-center">
+                                    <span t-att-class="'badge px-3 py-2 ' + {
+                                        'draft': 'bg-secondary',
+                                        'confirmed': 'bg-success',
+                                    }.get(app.state, 'bg-secondary')">
+                                        <t t-esc="{
+                                            'draft': '📝 Draft',
+                                            'confirmed': '✅ Confirmed',
+                                        }.get(app.state, app.state)"/>
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a t-att-href="'/my/appointments/%s' % app.id"
+                                       class="btn btn-sm btn-outline-primary">View
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
+            </div>
+
+            <!-- PAST APPOINTMENTS -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-dark">✔️ Past Appointments</h5>
+                <t t-if="not past">
+                    <div class="alert alert-secondary">No past appointments.</div>
+                </t>
+                <t t-if="past" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>#</th>
+                            <th>Appointment No</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date &amp; Time</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="past" t-as="app">
+                            <tr>
+                                <td>
+                                    <t t-esc="app_index + 1"/>
+                                </td>
+                                <td>
+                                    <strong>
+                                        <a t-att-href="'/my/appointments/%s' % app.id"
+                                           class="text-decoration-none">
+                                            <t t-esc="app.appointment_no"/>
+                                        </a>
+                                    </strong>
+                                </td>
+                                <td>
+                                    <t t-esc="app.patient_id.name"/>
+                                </td>
+                                <td>
+                                    <t t-esc="app.doctor_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="app.appointment_date"
+                                          t-options="{'widget': 'datetime'}"/>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge px-3 py-2 bg-dark">✔️ Done</span>
+                                </td>
+                                <td class="text-center">
+                                    <a t-att-href="'/my/appointments/%s' % app.id"
+                                       class="btn btn-sm btn-outline-secondary">View
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
+            </div>
+
+            <!-- CANCELLED APPOINTMENTS -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-danger">❌ Cancelled Appointments</h5>
+                <t t-if="not cancelled">
+                    <div class="alert alert-secondary">No cancelled appointments.</div>
+                </t>
+                <t t-if="cancelled" t-call="portal.portal_table">
+                    <thead>
+                        <tr class="active">
+                            <th>#</th>
+                            <th>Appointment No</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date &amp; Time</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="cancelled" t-as="app">
+                            <tr>
+                                <td>
+                                    <t t-esc="app_index + 1"/>
+                                </td>
+                                <td>
+                                    <strong>
+                                        <a t-att-href="'/my/appointments/%s' % app.id"
+                                           class="text-decoration-none">
+                                            <t t-esc="app.appointment_no"/>
+                                        </a>
+                                    </strong>
+                                </td>
+                                <td>
+                                    <t t-esc="app.patient_id.name"/>
+                                </td>
+                                <td>
+                                    <t t-esc="app.doctor_id.name"/>
+                                </td>
+                                <td>
+                                    <span t-field="app.appointment_date"
+                                          t-options="{'widget': 'datetime'}"/>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge px-3 py-2 bg-danger">❌ Cancelled</span>
+                                </td>
+                                <td class="text-center">
+                                    <a t-att-href="'/my/appointments/%s' % app.id"
+                                       class="btn btn-sm btn-outline-danger">View
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </t>
+            </div>
+
+        </t>
+    </template>
+
+    <!-- APPOINTMENT DETAIL PAGE -->
+    <template id="portal_appointment_detail" name="Appointment Detail">
+        <t t-call="portal.portal_layout">
+            <div class="container py-4">
+
+                <!-- BREADCRUMB -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/my/appointments">My Appointments</a>
+                        </li>
+                        <li class="breadcrumb-item active">
+                            <t t-esc="appointment.appointment_no"/>
+                        </li>
+                    </ol>
+                </nav>
+
+                <!-- STATUS TRACKER -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <t t-foreach="[
+                                ('draft', '📝', 'Draft'),
+                                ('confirmed', '✅', 'Confirmed'),
+                                ('in_progress', '🔄', 'In Progress'),
+                                ('done', '✔️', 'Done'),
+                            ]" t-as="step">
+                                <div class="text-center flex-fill">
+                                    <div t-att-class="'rounded-circle d-inline-flex align-items-center justify-content-center mb-1 ' + (
+                                        'bg-success text-white' if appointment.state != 'cancelled' and
+                                        ['draft','confirmed','in_progress','done'].index(appointment.state) >=
+                                        ['draft','confirmed','in_progress','done'].index(step[0])
+                                        else 'bg-danger text-white' if appointment.state == 'cancelled'
+                                        else 'bg-light border text-muted'
+                                    )" style="width:48px;height:48px;font-size:20px;">
+                                        <t t-esc="step[1]"/>
+                                    </div>
+                                    <div class="small fw-bold mt-1">
+                                        <t t-esc="step[2]"/>
+                                    </div>
+                                </div>
+                                <t t-if="not step_last">
+                                    <div class="flex-grow-1 border-top mx-1 mt-n4"/>
+                                </t>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APPOINTMENT INFO CARD -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            🗓️ Appointment —
+                            <t t-esc="appointment.appointment_no"/>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Patient</div>
+                                    <div class="fw-bold">
+                                        <t t-esc="appointment.patient_id.name"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Doctor</div>
+                                    <div class="fw-bold">
+                                        <t t-esc="appointment.doctor_id.name"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Date &amp; Time</div>
+                                    <div class="fw-bold">
+                                        <span t-field="appointment.appointment_date"
+                                              t-options="{'widget': 'datetime'}"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Shift</div>
+                                    <div class="fw-bold">
+                                        <t t-esc="appointment.shift_id.name or 'N/A'"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Status</div>
+                                    <div>
+                                        <span t-att-class="'badge px-3 py-2 ' + {
+                                            'draft': 'bg-secondary',
+                                            'confirmed': 'bg-success',
+                                            'in_progress': 'bg-primary',
+                                            'done': 'bg-dark',
+                                            'cancelled': 'bg-danger',
+                                        }.get(appointment.state, 'bg-secondary')">
+                                            <t t-esc="{
+                                                'draft': '📝 Draft',
+                                                'confirmed': '✅ Confirmed',
+                                                'in_progress': '🔄 In Progress',
+                                                'done': '✔️ Done',
+                                                'cancelled': '❌ Cancelled',
+                                            }.get(appointment.state, appointment.state)"/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 bg-light rounded">
+                                    <div class="text-muted small">Consultation Fee</div>
+                                    <div class="fw-bold text-success">
+                                        ₹
+                                        <t t-esc="appointment.consultation_fee"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ACTION BUTTONS -->
+                <div class="d-flex gap-2">
+                    <a href="/my/appointments" class="btn btn-outline-secondary">
+                        ← Back to Appointments
+                    </a>
+                    <t t-if="appointment.state in ('draft', 'confirmed')">
+                        <form t-att-action="'/my/appointments/%s/cancel' % appointment.id"
+                              method="post" class="d-inline">
+                            <input type="hidden" name="csrf_token"
+                                   t-att-value="request.csrf_token()"/>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    onclick="return confirm('Are you sure you want to cancel?')">
+                                ❌ Cancel Appointment
+                            </button>
+                        </form>
+                    </t>
+                    <t t-if="appointment.state == 'confirmed'">
+                        <a href="/book-appointment" class="btn btn-outline-primary">
+                            📅 Book Another
+                        </a>
+                    </t>
+                </div>
+
+            </div>
+        </t>
+    </template>
+
+    <!-- WAITING AREA SCREEN -->
+    <template id="waiting_screen_template" name="Waiting Area Screen">
+        <t t-call="website.layout">
+            <div style="background:#0d1b2a; min-height:100vh; padding:30px;">
+
+                <!-- HEADER -->
+                <div class="text-center mb-4">
+                    <h1 style="color:#ffffff; font-size:2.5rem; font-weight:800; letter-spacing:3px;">
+                        🏥 PATIENT WAITING LIST
+                    </h1>
+                    <p style="color:#90caf9; font-size:1.1rem;">
+                        Today's Appointments —
+                        <strong style="color:#ffffff;">
+                            <t t-esc="now"/>
+                        </strong>
+                    </p>
+                    <hr style="border-color:#1e3a5f;"/>
+                </div>
+
+                <!-- NO APPOINTMENTS -->
+                <t t-if="not appointments">
+                    <div class="text-center mt-5">
+                        <h3 style="color:#90caf9;">✅ No patients currently waiting</h3>
+                    </div>
+                </t>
+
+                <!-- APPOINTMENTS TABLE -->
+                <t t-if="appointments">
+                    <div class="table-responsive">
+                        <table class="table table-borderless" style="color:#ffffff;">
+                            <thead>
+                                <tr style="background:#1e3a5f; font-size:1.1rem;
+                                           text-transform:uppercase; letter-spacing:1px;">
+                                    <th class="py-3 px-4">#</th>
+                                    <th class="py-3 px-4">Token</th>
+                                    <th class="py-3 px-4">Patient Name</th>
+                                    <th class="py-3 px-4">Doctor</th>
+                                    <th class="py-3 px-4">Time</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="appointments" t-as="appt">
+                                    <tr t-att-style="'background:%s; border-bottom:1px solid #1e3a5f;' % (
+                                        '#1a3a1a' if appt.state == 'in_progress' else '#1a1a2e'
+                                    )">
+                                        <td class="py-3 px-4 text-muted">
+                                            <t t-esc="appt_index + 1"/>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span style="background:#1e3a5f; padding:4px 12px;
+                                                         border-radius:20px; font-weight:700;
+                                                         color:#90caf9;">
+                                                <t t-esc="appt.appointment_no"/>
+                                            </span>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <strong style="font-size:1.1rem;">
+                                                <t t-esc="appt.patient_id.name"/>
+                                            </strong>
+                                        </td>
+                                        <td class="py-3 px-4" style="color:#90caf9;">
+                                            <t t-esc="appt.doctor_id.name"/>
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <span t-field="appt.appointment_date"
+                                                  t-options="{'widget': 'datetime',
+                                                              'format': 'hh:mm a'}"/>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <t t-if="appt.state == 'in_progress'">
+                                                <span style="background:#2e7d32; color:#ffffff;
+                                                             padding:6px 18px; border-radius:20px;
+                                                             font-weight:700; font-size:0.95rem;
+                                                             animation: pulse 1.5s infinite;">
+                                                    🟢 IN PROGRESS
+                                                </span>
+                                            </t>
+                                            <t t-else="">
+                                                <span style="background:#1565c0; color:#ffffff;
+                                                             padding:6px 18px; border-radius:20px;
+                                                             font-weight:700; font-size:0.95rem;">
+                                                    ⏳ WAITING
+                                                </span>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+
+                <!-- AUTO REFRESH FOOTER -->
+                <div class="text-center mt-4">
+                    <small style="color:#546e7a;">
+                        🔄 Screen refreshes every 60 seconds
+                    </small>
+                </div>
+
+            </div>
+
+            <!-- AUTO REFRESH SCRIPT -->
+            <script>
+                setTimeout(function() {
+                window.location.reload();
+                }, 60000);
+            </script>
+
+            <!-- PULSE ANIMATION -->
+            <style>
+                @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
+                }
+            </style>
 
         </t>
     </template>

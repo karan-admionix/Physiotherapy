@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from odoo import api, fields, models
 
 
@@ -18,11 +17,27 @@ class MedicalTimeShift(models.Model):
     start_time = fields.Float(string="Start Time", help="start time of time slot")
     end_time = fields.Float(string="End Time", help="End time of time slot")
 
+    # NEW FIELDS
+    slot_duration = fields.Selection([
+        ('15', '15 Minutes'),
+        ('30', '30 Minutes'),
+        ('60', '1 Hour'),
+    ], string="Slot Duration", default='30', required=True)
+
+    max_appointments = fields.Integer(
+        string="Max Appointments",
+        default=10,
+        help="Maximum appointments allowed in this shift per day"
+    )
+
+    working_days = fields.Many2many(
+        'medical.working.day',
+        string="Working Days",
+        help="Days this shift is available"
+    )
+
     @api.model_create_multi
     def create(self, vals_list):
-        """Overrides the default create method to set the `name` field of the
-        newly created `medical.time.shift` record(s) to a string that represents
-        the shift time range."""
         res = super(MedicalTimeShift, self).create(vals_list)
         res.name = f'{res.start_time} to {res.end_time}'
         return res
@@ -31,4 +46,3 @@ class MedicalTimeShift(models.Model):
     def _onchange_time(self):
         name = f'{self.start_time} to {self.end_time}'
         self.update({'name': name})
-

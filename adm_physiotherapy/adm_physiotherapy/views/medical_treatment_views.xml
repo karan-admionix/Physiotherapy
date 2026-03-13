@@ -17,7 +17,7 @@
         <field name="res_model">medical.treatment</field>
         <field name="view_mode">list</field>
     </record>
-    <menuitem id="hospital_root_menu" name="Medical Clinic" sequence="1"/>
+    <menuitem id="hospital_root_menu" name="Physiotherapy Management" sequence="1"/>
     <menuitem id="medical_configure" name="Configure" parent="hospital_root_menu" sequence="5"/>
     <menuitem id="medical_treatment_menu" name="Treatments" parent="medical_configure" sequence="10"
               action="medical_treatment_menu_action"/>

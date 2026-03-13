@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <!-- ADMIN RULE: See all appointments -->
+    <record id="rule_appointment_admin_all" model="ir.rule">
+        <field name="name">Admin: All Appointments</field>
+        <field name="model_id" ref="adm_physiotherapy.model_medical_appointment"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('adm_physiotherapy.group_medical_admin'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
 
-
-<!--         DOCTOR RULE : Only patients-->
-
-    <record id="rule_partner_doctor_patients_only" model="ir.rule">
-        <field name="name">Doctor: Patients Only</field>
-        <field name="model_id" ref="base.model_res_partner"/>
-        <field name="domain_force">[('is_patient', '=', True)]</field>
+    <!-- DOCTOR RULE: Only own appointments -->
+    <record id="rule_appointment_doctor_own" model="ir.rule">
+        <field name="name">Doctor: Own Appointments Only</field>
+        <field name="model_id" ref="adm_physiotherapy.model_medical_appointment"/>
+        <field name="domain_force">[('doctor_id.user_id', '=', user.id)]</field>
         <field name="groups" eval="[(4, ref('adm_physiotherapy.group_medical_doctor'))]"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
@@ -15,19 +24,15 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
-
-<!--         PATIENT RULE : Only own record-->
-
-
-    <record id="rule_partner_patient_own_record" model="ir.rule">
-        <field name="name">Patient: Own Record</field>
-        <field name="model_id" ref="base.model_res_partner"/>
-        <field name="domain_force">[('id', '=', user.partner_id.id)]</field>
+    <!-- PATIENT RULE: Only own appointments -->
+    <record id="rule_appointment_patient_own" model="ir.rule">
+        <field name="name">Patient: Own Appointments Only</field>
+        <field name="model_id" ref="adm_physiotherapy.model_medical_appointment"/>
+        <field name="domain_force">[('patient_id', '=', user.partner_id.id)]</field>
         <field name="groups" eval="[(4, ref('adm_physiotherapy.group_medical_patient'))]"/>
         <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-
 </odoo>

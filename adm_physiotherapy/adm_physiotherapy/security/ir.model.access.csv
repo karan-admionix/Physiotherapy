@@ -11,6 +11,8 @@ access_medical_admin_specialist,medical.admin.specialist,adm_physiotherapy.model
 access_medical_admin_treatment_category,medical.admin.treatment.category,adm_physiotherapy.model_treatment_category,base.group_user,1,1,1,1
 access_medical_admin_medical_source,medical.admin.medical.source,adm_physiotherapy.model_medical_source,base.group_user,1,1,1,1
 access_medicine_frequency_user,medicine.frequency,adm_physiotherapy.model_medicine_frequency,base.group_user,1,0,0,0
+access_medical_working_day,medical.working.day,model_medical_working_day,base.group_user,1,1,1,1
+
 
 access_medical_doctor_appointment,medical.doctor.appointment,adm_physiotherapy.model_medical_appointment,adm_physiotherapy.group_medical_doctor,1,1,1,1
 access_medical_doctor_prescription,medical.doctor.prescription,adm_physiotherapy.model_medical_prescription,adm_physiotherapy.group_medical_doctor,1,1,1,0

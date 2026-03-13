@@ -8,21 +8,11 @@ class MedicalEquipment(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'create_date desc'
 
-
-    # BASIC IDENTIFICATION
-
-    # name = fields.Char(
-    #     string="Equipment Reference",
-    #     required=True,
-    #     copy=False,
-    #     readonly=True,
-    #     default=lambda self: 'New'
-    # )
-
     product_id = fields.Many2one(
         'product.product',
         string="Equipment Product",
         required=True,
+        # Only allow products marked as medical equipment
         domain="[('product_tmpl_id.is_medical_product','=',True),"
                " ('product_tmpl_id.medical_product_type','=','equipment')]",
         tracking=True,
@@ -32,6 +22,7 @@ class MedicalEquipment(models.Model):
         'stock.lot',
         string="Serial Number",
         required=True,
+        # Filter serials by selected product
         domain="[('product_id','=',product_id)]",
         tracking=True,
     )
@@ -42,7 +33,6 @@ class MedicalEquipment(models.Model):
         required=True,
         index=True
     )
-
 
     # OWNERSHIP & ASSIGNMENT
 
@@ -60,7 +50,6 @@ class MedicalEquipment(models.Model):
         domain="[('is_physio','=',True)]",
         tracking=True,
     )
-
 
     # LIFECYCLE MANAGEMENT
 
@@ -88,14 +77,14 @@ class MedicalEquipment(models.Model):
 
     notes = fields.Text(string="Notes")
 
+    # Auto-generated sequence name
+    name = fields.Char(string="Equipment Name", readonly=True, copy=False, default='New')
 
     # CONSTRAINTS
 
     @api.constrains('product_id')
     def _check_product_configuration(self):
-        """
-        Ensure selected product is valid medical equipment.
-        """
+        """Ensure selected product is valid medical equipment."""
         for rec in self:
             tmpl = rec.product_id.product_tmpl_id
             if not tmpl.is_medical_product:
@@ -113,9 +102,7 @@ class MedicalEquipment(models.Model):
 
     @api.constrains('serial_lot_id', 'product_id')
     def _check_serial_uniqueness(self):
-        """
-        Prevent one serial being linked to multiple equipment records.
-        """
+        """Prevent one serial being linked to multiple equipment records."""
         for rec in self:
             if not rec.serial_lot_id:
                 continue
@@ -129,11 +116,11 @@ class MedicalEquipment(models.Model):
                     "This Serial Number is already linked to another equipment."
                 )
 
-
     # CREATE OVERRIDE
 
     @api.model_create_multi
     def create(self, vals_list):
+        # Auto-assign sequence number on creation
         for vals in vals_list:
             if vals.get('name', 'New') == 'New':
                 vals['name'] = self.env['ir.sequence'].next_by_code(
@@ -141,10 +128,10 @@ class MedicalEquipment(models.Model):
                 ) or 'New'
         return super().create(vals_list)
 
-
     # STATE ACTIONS
 
     def action_activate(self):
+        # Activate equipment and set acquisition date
         for rec in self:
             if rec.state != 'draft':
                 continue
@@ -152,6 +139,7 @@ class MedicalEquipment(models.Model):
             rec.acquisition_date = fields.Date.today()
 
     def action_send_to_maintenance(self):
+        # Only active equipment can go to maintenance
         for rec in self:
             if rec.state != 'active':
                 raise ValidationError(
@@ -160,6 +148,7 @@ class MedicalEquipment(models.Model):
             rec.state = 'maintenance'
 
     def action_retire(self):
+        # Retire equipment, set retirement date and unassign physiotherapist
         for rec in self:
             if rec.state == 'retired':
                 continue
@@ -168,6 +157,7 @@ class MedicalEquipment(models.Model):
             rec.assigned_physio_id = False
 
     def action_reset_to_draft(self):
+        # Reset equipment back to draft and clear dates
         for rec in self:
             rec.state = 'draft'
             rec.acquisition_date = False

@@ -1,18 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
 
-    <record id="group_medical_patient" model="res.groups">
-        <field name="name">Patient</field>
+    <record model="ir.module.category" id="module_category_physiotherapy_management">
+        <field name="name">physiotherapy Management</field>
+        <field name="sequence">5</field>
+    </record>
+
+    <record model="res.groups.privilege" id="group_physiotherapy_category">
+        <field name="name">Physio</field>
+        <field name="sequence">1</field>
+        <field name="category_id" ref="module_category_physiotherapy_management"/>
+        <field name="placeholder">Select Role</field>
+    </record>
+
+    <record id="group_medical_admin" model="res.groups">
+        <field name="name">Admin</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="group_physiotherapy_category"/>
+        <field name="comment">Admin had all the access.</field>
     </record>
 
     <record id="group_medical_doctor" model="res.groups">
         <field name="name">Doctor</field>
-        <field name="implied_ids" eval="[(4, ref('adm_physiotherapy.group_medical_patient'))]"/>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="group_physiotherapy_category"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Doctor's: Can see there own view</field>
     </record>
 
-    <record id="group_medical_admin" model="res.groups">
-        <field name="name">Administrator</field>
-        <field name="implied_ids" eval="[(4, ref('adm_physiotherapy.group_medical_doctor'))]"/>
+    <record id="group_medical_patient" model="res.groups">
+        <field name="name">Patient</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="group_physiotherapy_category"/>
+        <field name="implied_ids" eval="[(4, ref('group_medical_doctor'))]"/>
+        <field name="comment">Patient's: Can see there own appointment</field>
     </record>
-
 
 </odoo>

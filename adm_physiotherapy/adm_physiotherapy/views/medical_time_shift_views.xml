@@ -5,7 +5,7 @@
         <field name="name">medical.time.shift.view.tree</field>
         <field name="model">medical.time.shift</field>
         <field name="arch" type="xml">
-            <list string="Medical Time Shift">
+            <list string="Appointment Slot Time">
                 <field name="name"/>
                 <field name="shift_type"/>
                 <field name="start_time" widget="float_time"/>
@@ -18,7 +18,7 @@
         <field name="name">medical.time.shift.view.form</field>
         <field name="model">medical.time.shift</field>
         <field name="arch" type="xml">
-            <form string="Medical Time Shift">
+            <form string="Appointment Slot Time">
                 <sheet>
                     <h1>
                         <div class="d-flex">
@@ -37,13 +37,13 @@
         </field>
     </record>
     <record id="medical_time_shift_menu_action" model="ir.actions.act_window">
-        <field name="name">Medical Time Shift</field>
+        <field name="name">Appointment Slot Time</field>
         <field name="res_model">medical.time.shift</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="hospital_root_menu" name="Medical Clinic" sequence="1"/>
+    <menuitem id="hospital_root_menu" name="Physiotherapy Management" sequence="1"/>
     <menuitem id="medical_configure" name="Configure" parent="hospital_root_menu" sequence="5"/>
-    <menuitem id="Shift_time_menu" name="Clinic Shift Time" parent="medical_configure" sequence="2"
+    <menuitem id="Shift_time_menu" name="Doctor's Timing" parent="medical_configure" sequence="2"
               action="medical_time_shift_menu_action"/>
 </odoo>

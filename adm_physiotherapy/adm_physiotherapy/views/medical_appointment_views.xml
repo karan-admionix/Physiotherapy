@@ -43,42 +43,56 @@
 
                     <header>
 
+                        <!-- Draft → Confirm -->
                         <button name="action_confirm"
                                 type="object"
                                 string="Confirm"
                                 class="btn-primary"
                                 invisible="state != 'draft'"/>
 
-                        <button name="action_create_invoice"
+                        <!-- Confirm → In Progress -->
+                        <button name="action_start"
                                 type="object"
-                                string="Create Invoice"
-                                class="oe_highlight"
-                                invisible="state != 'done' or invoice_count != 0"/>
-
-                        <!-- Done -->
-                        <button name="action_done"
-                                type="object"
-                                string="Done"
-                                class="oe_highlight"
-                                invisible="state != 'in_progress'"/>
-
-                        <button name="action_cancel" type="object"
-                                string="Cancel"
-                                class="oe_link"
-                                invisible="state not in ['draft','confirmed','in_progress']"/>
-
-                        <field name="state" widget="statusbar"
-                               statusbar_visible="draft,confirmed,in_progress,done,cancelled"/>
-
-                        <button name="action_open_patient_form"
-                                type="object"
-                                string="View Patient"
-                                icon="fa-user-md"
+                                string="Start Treatment"
                                 class="oe_highlight"
                                 invisible="state != 'confirmed'"/>
 
-                    </header>
+                        <!-- In Progress → Done -->
+                        <button name="action_done"
+                                type="object"
+                                string="Mark Done"
+                                class="oe_highlight"
+                                invisible="state != 'in_progress'"/>
 
+
+                        <!-- Reset -->
+                        <button name="action_draft"
+                                type="object"
+                                string="Reset to Draft"
+                                class="btn-primary"
+                                invisible="state not in ['done','cancelled']"/>
+
+                        <!-- Cancel -->
+                        <button name="action_cancel"
+                                type="object"
+                                string="Cancel"
+                                class="btn-primary"
+                                confirm="Are you sure you want to cancel this appointment?"
+                                invisible="state == 'cancelled'"/>
+
+                        <!-- CREATE INVOICE BUTTON -->
+                        <button name="action_create_invoice"
+                                type="object"
+                                string="Create Invoice"
+                                class="btn-primary"
+                                invisible="state != 'done'"/>
+
+
+                        <field name="state"
+                               widget="statusbar"
+                               statusbar_visible="draft,confirmed,in_progress,done,cancelled"/>
+
+                    </header>
 
                     <sheet>
 
@@ -108,13 +122,17 @@
                             <group>
                                 <field name="age" readonly="state in ['done', 'cancelled']"/>
                                 <field name="mobile" readonly="state in ['done', 'cancelled']"/>
+                                <field name="email" readonly="state in ['done', 'cancelled']"/>
                                 <field name="user_name" readonly="state in ['done', 'cancelled']"/>
                             </group>
                         </group>
 
                         <group string="Appointment Details">
                             <group>
-                                <field name="doctor_id" readonly="state in ['done', 'cancelled']"/>
+                                <field name="doctor_id"
+                                       readonly="state in ['done', 'cancelled']"
+                                       options="{'no_create': True, 'no_create_edit': True, 'no_open': True}"/>
+
                                 <field name="time_shift_ids" widget="many2many_tags"
                                        readonly="state in ['done', 'cancelled']"/>
                                 <field name="shift_id" readonly="state in ['done', 'cancelled']"/>
@@ -128,6 +146,8 @@
                                        options="{'minute_step': 30}" readonly="state in ['done', 'cancelled']"/>
                                 <field name="treatments" widget="many2many_tags"
                                        readonly="state in ['done', 'cancelled']"/>
+                                <field name="consultation_fee"
+                                       readonly="state in ['confirmed','in_progress','done','cancelled']"/>
                             </group>
                         </group>
 
@@ -147,7 +167,6 @@
                           mode="month"
                           color="state"
                           quick_create="0">
-
                     <field name="appointment_no"/>
                     <field name="patient_id" filters="1" avatar_field="image"/>
                     <field name="patient_no"/>
@@ -221,12 +240,13 @@
 
         <!--        ACTION + MENU      -->
         <record id="medical_appointment_menu_action" model="ir.actions.act_window">
-            <field name="name">Appointments</field>
+            <field name="name">Appointment List</field>
             <field name="res_model">medical.appointment</field>
             <field name="view_mode">calendar,kanban,list,form</field>
         </record>
 
-        <menuitem id="hospital_root_menu" name="Medical Clinic" sequence="1"/>
+        <menuitem id="hospital_root_menu" name="Physiotherapy Management" sequence="1"
+                  web_icon="adm_physiotherapy,static/description/icon.png"/>
         <menuitem id="hospital_appointment_info"
                   name="Appointments"
                   parent="hospital_root_menu"

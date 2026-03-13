@@ -8,7 +8,7 @@ class MedicalTreatment(models.Model):
     _name = 'medical.treatment'
     _description = "Medical Treatment"
 
-    name = fields.Char(string='Treatment Name', help="Date of the treatment")
+    name = fields.Char(string='Treatment Name', help="Name of the treatment")
     treatment_categ_id = fields.Many2one('treatment.category',
                                          string="Category",
                                          help="name of the treatment")

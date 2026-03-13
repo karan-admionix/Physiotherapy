@@ -15,27 +15,27 @@ class MedicalPatients(models.Model):
     dob = fields.Date(string='Date of Birth')
     patient_age = fields.Integer(compute='_compute_patient_age', store=True, string="Age")
     gender = fields.Selection([('male', 'Male'), ('female', 'Female'), ('other', 'Other')], string="Gender")
-    report_ids = fields.One2many('xray.report', 'patient_id', string='X-Ray')
+    # report_ids = fields.One2many('xray.report', 'patient_id', string='X-Ray' )
     source_id = fields.Many2one('medical.source',
                                 string="Source ",
                                 help=" Source name like facebook etc.")
 
-    @api.depends('dob')
-    def _compute_patient_age(self):
-        today = date.today()
-        for record in self:
-            if record.dob:
-                dob = record.dob
-                record.patient_age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-            else:
-                record.patient_age = 0
+    # @api.depends('dob')
+    # def _compute_patient_age(self):
+    #     today = date.today()
+    #     for record in self:
+    #         if record.dob:
+    #             dob = record.dob
+    #             record.patient_age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+    #         else:
+    #             record.patient_age = 0
 
-    @api.model
-    def name_search(self, name, args=None, operator='ilike', limit=100):
-        args = args or []
-        if name:
-            args = args + ['|', ('name', operator, name), ('patient_no', operator, name)]
-        return super(MedicalPatients, self).name_search(name, args, operator, limit)
+    # @api.model
+    # def name_search(self, name, args=None, operator='ilike', limit=100):
+    #     args = args or []
+    #     if name:
+    #         args = args + ['|', ('name', operator, name), ('patient_no', operator, name)]
+    #     return super(MedicalPatients, self).name_search(name, args, operator, limit)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -47,10 +47,8 @@ class MedicalPatients(models.Model):
         return records
 
     """To create Patients in the clinic, use res.partner model and customize it"""
-    _inherit = 'res.partner'
-
-    patient_no = fields.Char(string='Patient No.', copy=False, index=True)  # Ensure uniqueness
-    is_patient = fields.Boolean(string="Is a Patient", default=False)  # New field to identify patients
+    # patient_no = fields.Char(string='Patient No.', copy=False, index=True)  # Ensure uniqueness
+    # is_patient = fields.Boolean(string="Is a Patient", default=False)  # New field to identify patients
 
     company_type = fields.Selection(selection_add=[('person', 'Patient'),
                                                    ('company', 'Medicine Distributor')],
@@ -62,9 +60,7 @@ class MedicalPatients(models.Model):
                                  store=True,
                                  string="Age",
                                  help="Age of the patient")
-    gender = fields.Selection([('male', 'Male'), ('female', 'Female')],
-                              string="gender",
-                              help="gender of the patient")
+    gender = fields.Selection(selection_add=[('male', 'Male'), ('female', 'Female')])
     medical_questionnaire_ids = fields.One2many('medical.questionnaire',
                                                 'patient_id',
                                                 readonly=False,
@@ -124,6 +120,9 @@ class MedicalPatients(models.Model):
             args += ['|', ('name', operator, name), ('patient_no', operator, name)]
         return super(MedicalPatients, self).name_search(name, args, operator, limit)
 
+        return records
+
+    # CURRENT (second create method)
     @api.model_create_multi
     def create(self, vals_list):
         """ Generate a unique patient number if not already assigned """
@@ -132,7 +131,55 @@ class MedicalPatients(models.Model):
         for record in records:
             if record.is_patient and not record.patient_no:
                 patient_no = self.env['ir.sequence'].next_by_code('medical.patient') or 'PAT/NEW'
-                record.write({'patient_no': patient_no})  # Ensure value is saved
+                record.write({'patient_no': patient_no})
+
+        return records
+
+    # CHANGE TO
+    @api.model_create_multi
+    def create(self, vals_list):
+        """ Generate a unique patient number if not already assigned """
+
+        # CHECK DUPLICATE EMAIL BEFORE CREATING
+        for vals in vals_list:
+            email = vals.get('email')
+            if email and vals.get('is_patient'):
+                existing_user = self.env['res.users'].sudo().search([
+                    ('login', '=', email)
+                ], limit=1)
+                if existing_user:
+                    raise UserError(
+                        f"A user with email '{email}' already exists "
+                        f"({existing_user.name}). Please use a different email."
+                    )
+
+        records = super(MedicalPatients, self).create(vals_list)
+
+        for record in records:
+            # Generate patient number
+            if record.is_patient and not record.patient_no:
+                patient_no = self.env['ir.sequence'].next_by_code('medical.patient') or 'PAT/NEW'
+                record.write({'patient_no': patient_no})
+
+            # CREATE OR LINK PORTAL USER
+            if record.is_patient and record.email:
+                existing_user = self.env['res.users'].sudo().search([
+                    ('login', '=', record.email)
+                ], limit=1)
+                if existing_user:
+                    # Link to existing user
+                    record.write({'user_ids': [(4, existing_user.id)]})
+                else:
+                    # Create new portal user
+                    portal_group = self.env.ref('base.group_portal')
+                    user_vals = {
+                        'name': record.name,
+                        'login': record.email,
+                        'email': record.email,
+                        'group_ids': [(4, portal_group.id)],
+                    }
+                    new_user = self.env['res.users'].sudo().create(user_vals)
+                    record.write({'user_ids': [(4, new_user.id)]})
 
         return records
 
